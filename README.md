@@ -47,12 +47,12 @@ O projeto segue a metodologia ágil com uso de:
 ---
 
 ## 🚀 Status do Projeto
-Em desenvolvimento (MVP)
+Em desenvolvimento - Encontra-se no estágio da Sprint 01
 
 ---
 
 ## 📅 Planejamento das Sprints
-Sprint 1: Levantamento de requisitos  
-Sprint 2: Interface inicial  
-Sprint 3: Implementação do contador  
-Sprint 4: Testes e ajustes  
+Sprint 1: Desenvolvimento da Wireframe
+Sprint 2: Desenvolvimento do código fonte
+Sprint 3: Integração do código fonte com a UI
+Sprint 4: Ajustes finais para o lançamento do MVP
