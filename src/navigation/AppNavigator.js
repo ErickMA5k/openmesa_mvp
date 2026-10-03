@@ -4,12 +4,13 @@ import HomeScreen from '../screens/HomeScreen';
 import AdicionarFichaScreen from '../screens/AdicionarFichaScreen';
 import HistoricoScreen from '../screens/HistoricoScreen';
 import CalendarioScreen from '../screens/CalendarioScreen';
+import { cores } from '../theme';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   return (
-    <Stack.Navigator initialRouteName="Login">
+    <Stack.Navigator initialRouteName="Login" screenOptions={{ contentStyle: { backgroundColor: cores.fundo } }}>
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="AdicionarFicha" component={AdicionarFichaScreen} />
