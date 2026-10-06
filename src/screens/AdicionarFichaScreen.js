@@ -10,9 +10,11 @@ import {
   ScrollView,
 } from 'react-native';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import PopupFichas from '../components/popupFichas';
+import { useFichas } from '../context/FichasContext';
 
 export default function AdicionarFichaScreen({ navigation }) {
+  const { adicionarFicha } = useFichas();
   const [tipo, setTipo] = useState('');
   const [local, setLocal] = useState('');
   const [quantidade, setQuantidade] = useState('');
@@ -37,26 +39,12 @@ export default function AdicionarFichaScreen({ navigation }) {
     }
 
     try {
-      const dadosExistentes = await AsyncStorage.getItem('@openmesa:fichas');
-      const fichasExistentes = dadosExistentes ? JSON.parse(dadosExistentes) : [];
-      const ficha = {
-        id: Date.now().toString(),
+      await adicionarFicha({
         tipo,
         local,
         quantidade: quantidadeNumero,
         valor: valorNumero,
-        total,
-        data: new Date().toLocaleDateString('pt-BR'),
-      };
-
-      const listaAtualizada = Array.isArray(fichasExistentes)
-        ? [...fichasExistentes, ficha]
-        : [ficha];
-
-      await AsyncStorage.setItem(
-        '@openmesa:fichas',
-        JSON.stringify(listaAtualizada)
-      );
+      });
 
       Alert.alert('Sucesso', 'Ficha cadastrada com sucesso!', [
         {
@@ -77,6 +65,16 @@ export default function AdicionarFichaScreen({ navigation }) {
 
       <Text style={styles.titulo}>
         Adicionar Ficha
+      </Text>
+
+      <Text style={styles.label}>
+        Cadastro rápido
+      </Text>
+
+      <PopupFichas />
+
+      <Text style={styles.label}>
+        Cadastro detalhado
       </Text>
 
       <Text style={styles.label}>

@@ -16,25 +16,22 @@ export default function CalendarioScreen() {
   const [mesAtual, setMesAtual] = useState(new Date());
 
   useEffect(() => {
-    carregarFichas();
+    let ativo = true;
+
+    AsyncStorage.getItem('@openmesa:fichas')
+      .then((dados) => {
+        if (ativo) {
+          setFichas(dados ? JSON.parse(dados) : []);
+        }
+      })
+      .catch((error) => {
+        console.log('Erro ao carregar fichas:', error);
+      });
+
+    return () => {
+      ativo = false;
+    };
   }, []);
-
-  async function carregarFichas() {
-    try {
-      const dados = await AsyncStorage.getItem(
-        '@openmesa:fichas'
-      );
-
-      if (dados) {
-        setFichas(JSON.parse(dados));
-      } else {
-        setFichas([]);
-      }
-
-    } catch (error) {
-      console.log('Erro ao carregar fichas:', error);
-    }
-  }
 
   const ano = mesAtual.getFullYear();
   const mes = mesAtual.getMonth();
