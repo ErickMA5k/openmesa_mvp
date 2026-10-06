@@ -1,0 +1,14 @@
+{
+  "brand": {
+    "logo": "logo/open-mesa-logo.svg",
+    "mark": "logo/open-mesa-mark.svg"
+  },
+  "icons": {
+    "back": "icons/icons.svg#back",
+    "history": "icons/icons.svg#history",
+    "qr": "icons/icons.svg#qr",
+    "plus": "icons/icons.svg#plus",
+    "calendar": "icons/icons.svg#calendar"
+  },
+  "theme": "theme.js"
+}
