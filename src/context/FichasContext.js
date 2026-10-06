@@ -50,7 +50,7 @@ function receitaTotal() {
 export function useFichas() {
   const context = useContext(FichasContext);
   if (!context) {
-    throw new Error('useFichas deve ser utilizado somente em contexto com um FichasProvider');
+    throw new Error('useFichas deve ser utilizado somente para funções que contenham um FichasProvider);
   }
   return context;
 }
