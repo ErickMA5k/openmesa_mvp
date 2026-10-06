@@ -10,38 +10,37 @@ import {
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function CalendarioScreen() {
+export default function CalendarioScreen({ navigation }) {
 
   const [fichas, setFichas] = useState([]);
   const [mesAtual, setMesAtual] = useState(new Date());
 
+  const azul = '#147DBA';
+  const azulEscuro = '#172A55';
+
   useEffect(() => {
-    let ativo = true;
-
-    AsyncStorage.getItem('@openmesa:fichas')
-      .then((dados) => {
-        if (ativo) {
-          setFichas(dados ? JSON.parse(dados) : []);
-        }
-      })
-      .catch((error) => {
-        console.log('Erro ao carregar fichas:', error);
-      });
-
-    return () => {
-      ativo = false;
-    };
+    carregarFichas();
   }, []);
+
+  async function carregarFichas() {
+    try {
+      const dados = await AsyncStorage.getItem(
+        '@openmesa:fichas'
+      );
+
+      if (dados) {
+        setFichas(JSON.parse(dados));
+      } else {
+        setFichas([]);
+      }
+
+    } catch (error) {
+      console.log('Erro ao carregar fichas:', error);
+    }
+  }
 
   const ano = mesAtual.getFullYear();
   const mes = mesAtual.getMonth();
-
-  const primeiroDia = new Date(ano, mes, 1).getDay();
-  const quantidadeDias = new Date(
-    ano,
-    mes + 1,
-    0
-  ).getDate();
 
   const meses = [
     'Janeiro',
@@ -58,6 +57,18 @@ export default function CalendarioScreen() {
     'Dezembro',
   ];
 
+  const primeiroDia = new Date(
+    ano,
+    mes,
+    1
+  ).getDay();
+
+  const quantidadeDias = new Date(
+    ano,
+    mes + 1,
+    0
+  ).getDate();
+
   function mudarMes(valor) {
     setMesAtual(
       new Date(
@@ -70,43 +81,36 @@ export default function CalendarioScreen() {
 
   function possuiFicha(dia) {
 
-    const dataDia =
-      `${String(dia).padStart(2, '0')}/` +
-      `${String(mes + 1).padStart(2, '0')}/` +
-      `${ano}`;
+    const data = `${String(dia).padStart(2, '0')}/${String(
+      mes + 1
+    ).padStart(2, '0')}/${ano}`;
 
     return fichas.some(
-      (ficha) => ficha.data === dataDia
+      (ficha) => ficha.data === data
     );
   }
 
-  function fichasDoDia(dia) {
+  function fichasDoMes() {
 
-    const dataDia =
-      `${String(dia).padStart(2, '0')}/` +
-      `${String(mes + 1).padStart(2, '0')}/` +
-      `${ano}`;
+    return fichas.filter((ficha) => {
 
-    return fichas.filter(
-      (ficha) => ficha.data === dataDia
-    );
-  }
+      const partes = ficha.data.split('/');
 
-  function selecionarDia(dia) {
-    const fichasEncontradas = fichasDoDia(dia);
+      const mesFicha = Number(partes[1]);
+      const anoFicha = Number(partes[2]);
 
-    if (fichasEncontradas.length > 0) {
-      console.log(
-        'Fichas do dia:',
-        fichasEncontradas
+      return (
+        mesFicha === mes + 1 &&
+        anoFicha === ano
       );
-    }
+    });
   }
 
   const dias = [];
 
-  // Espaços antes do primeiro dia do mês
+  // Espaços antes do primeiro dia
   for (let i = 0; i < primeiroDia; i++) {
+
     dias.push(
       <View
         key={`vazio-${i}`}
@@ -127,20 +131,28 @@ export default function CalendarioScreen() {
           styles.dia,
           temFicha && styles.diaComFicha,
         ]}
-        onPress={() => selecionarDia(dia)}
       >
 
-        <Text
+        <View
           style={[
-            styles.numeroDia,
-            temFicha && styles.numeroComFicha,
+            styles.numeroContainer,
+            temFicha && styles.numeroSelecionado,
           ]}
         >
-          {dia}
-        </Text>
+
+          <Text
+            style={[
+              styles.numero,
+              temFicha && styles.numeroBranco,
+            ]}
+          >
+            {dia}
+          </Text>
+
+        </View>
 
         {temFicha && (
-          <View style={styles.indicador} />
+          <View style={styles.ponto} />
         )}
 
       </TouchableOpacity>
@@ -152,12 +164,28 @@ export default function CalendarioScreen() {
       contentContainerStyle={styles.container}
     >
 
+      {/* VOLTAR */}
+
+      <TouchableOpacity
+        style={styles.voltar}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.setaVoltar}>
+          ←
+        </Text>
+      </TouchableOpacity>
+
+
+      {/* TÍTULO */}
+
       <Text style={styles.titulo}>
         Calendário
       </Text>
 
-      {/* Cabeçalho do mês */}
-      <View style={styles.cabecalho}>
+
+      {/* MÊS */}
+
+      <View style={styles.seletorMes}>
 
         <TouchableOpacity
           style={styles.botaoMes}
@@ -168,9 +196,11 @@ export default function CalendarioScreen() {
           </Text>
         </TouchableOpacity>
 
-        <Text style={styles.mes}>
+
+        <Text style={styles.nomeMes}>
           {meses[mes]} {ano}
         </Text>
+
 
         <TouchableOpacity
           style={styles.botaoMes}
@@ -183,74 +213,52 @@ export default function CalendarioScreen() {
 
       </View>
 
-      {/* Dias da semana */}
+
+      {/* DIAS DA SEMANA */}
+
       <View style={styles.semana}>
 
-        <Text style={styles.nomeDia}>
-          Dom
-        </Text>
-
-        <Text style={styles.nomeDia}>
-          Seg
-        </Text>
-
-        <Text style={styles.nomeDia}>
-          Ter
-        </Text>
-
-        <Text style={styles.nomeDia}>
-          Qua
-        </Text>
-
-        <Text style={styles.nomeDia}>
-          Qui
-        </Text>
-
-        <Text style={styles.nomeDia}>
-          Sex
-        </Text>
-
-        <Text style={styles.nomeDia}>
-          Sáb
-        </Text>
+        <Text style={styles.nomeSemana}>Dom</Text>
+        <Text style={styles.nomeSemana}>Seg</Text>
+        <Text style={styles.nomeSemana}>Ter</Text>
+        <Text style={styles.nomeSemana}>Qua</Text>
+        <Text style={styles.nomeSemana}>Qui</Text>
+        <Text style={styles.nomeSemana}>Sex</Text>
+        <Text style={styles.nomeSemana}>Sáb</Text>
 
       </View>
 
-      {/* Calendário */}
+
+      {/* CALENDÁRIO */}
+
       <View style={styles.calendario}>
         {dias}
       </View>
 
-      {/* Legenda */}
+
+      {/* LEGENDA */}
+
       <View style={styles.legenda}>
 
-        <View style={styles.indicadorLegenda} />
+        <View style={styles.pontoLegenda} />
 
         <Text style={styles.textoLegenda}>
-          Dia com ficha cadastrada
+          Ficha registrada
         </Text>
 
       </View>
 
-      {/* Resumo */}
+
+      {/* RESUMO */}
+
       <View style={styles.resumo}>
 
         <Text style={styles.resumoTitulo}>
-          Resumo do mês
+          Fichas neste mês
         </Text>
 
-        <Text style={styles.resumoTexto}>
-          Fichas cadastradas:{' '}
-          {
-            fichas.filter((ficha) => {
-              const partes = ficha.data.split('/');
-
-              return (
-                Number(partes[1]) === mes + 1 &&
-                Number(partes[2]) === ano
-              );
-            }).length
-          }
+        <Text style={styles.quantidade}>
+          {fichasDoMes().length}
         </Text>
 
       </View>
@@ -259,58 +267,91 @@ export default function CalendarioScreen() {
   );
 }
 
+
 const styles = StyleSheet.create({
 
   container: {
     flexGrow: 1,
-    padding: 20,
     backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 40,
   },
 
+
+  /* VOLTAR */
+
+  voltar: {
+    width: 35,
+    height: 35,
+    justifyContent: 'center',
+  },
+
+  setaVoltar: {
+    fontSize: 24,
+    color: '#333333',
+  },
+
+
+  /* TÍTULO */
+
   titulo: {
-    fontSize: 28,
+    fontSize: 27,
     fontWeight: 'bold',
+    color: '#222222',
+    marginTop: 15,
     marginBottom: 25,
   },
 
-  cabecalho: {
+
+  /* MÊS */
+
+  seletorMes: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'space-between',
+    marginBottom: 22,
+  },
+
+  nomeMes: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#172A55',
   },
 
   botaoMes: {
-    width: 45,
-    height: 45,
-    borderRadius: 8,
-    backgroundColor: '#F2F2F2',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#147DBA',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   seta: {
-    fontSize: 30,
-    color: '#7A4E2D',
+    color: '#FFFFFF',
+    fontSize: 27,
+    lineHeight: 28,
   },
 
-  mes: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
+
+  /* SEMANA */
 
   semana: {
     flexDirection: 'row',
     marginBottom: 8,
   },
 
-  nomeDia: {
+  nomeSemana: {
     width: '14.28%',
     textAlign: 'center',
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: 'bold',
     color: '#777777',
   },
+
+
+  /* CALENDÁRIO */
 
   calendario: {
     flexDirection: 'row',
@@ -319,34 +360,48 @@ const styles = StyleSheet.create({
 
   dia: {
     width: '14.28%',
-    height: 55,
+    height: 52,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#EEEEEE',
   },
 
   diaComFicha: {
-    backgroundColor: '#F1E6DC',
+    backgroundColor: '#F5F8FB',
+    borderRadius: 10,
   },
 
-  numeroDia: {
-    fontSize: 16,
+  numeroContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  numeroSelecionado: {
+    backgroundColor: '#147DBA',
+  },
+
+  numero: {
+    fontSize: 14,
     color: '#333333',
   },
 
-  numeroComFicha: {
+  numeroBranco: {
+    color: '#FFFFFF',
     fontWeight: 'bold',
-    color: '#7A4E2D',
   },
 
-  indicador: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#7A4E2D',
-    marginTop: 4,
+  ponto: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#147DBA',
+    marginTop: 2,
   },
+
+
+  /* LEGENDA */
 
   legenda: {
     flexDirection: 'row',
@@ -354,34 +409,39 @@ const styles = StyleSheet.create({
     marginTop: 25,
   },
 
-  indicadorLegenda: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#7A4E2D',
+  pontoLegenda: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#147DBA',
     marginRight: 8,
   },
 
   textoLegenda: {
+    fontSize: 13,
     color: '#666666',
   },
+
+
+  /* RESUMO */
 
   resumo: {
     marginTop: 25,
     padding: 18,
+    borderRadius: 12,
     backgroundColor: '#F7F7F7',
-    borderRadius: 10,
   },
 
   resumoTitulo: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 15,
+    color: '#666666',
     marginBottom: 8,
   },
 
-  resumoTexto: {
-    fontSize: 15,
-    color: '#666666',
+  quantidade: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#172A55',
   },
 
 });

@@ -81,12 +81,47 @@ export default function AdicionarFichaScreen({ navigation }) {
         Tipo
       </Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Ex.: Marmita"
-        value={tipo}
-        onChangeText={setTipo}
-      />
+      <Text style={styles.label}>
+  Tipo
+</Text>
+
+<View style={styles.opcoesTipo}>
+
+  <TouchableOpacity
+    style={[
+      styles.opcaoTipo,
+      tipo === 'Marmita' && styles.opcaoSelecionada,
+    ]}
+    onPress={() => setTipo('Marmita')}
+  >
+    <Text
+      style={[
+        styles.textoOpcao,
+        tipo === 'Marmita' && styles.textoSelecionado,
+      ]}
+    >
+      Marmita
+    </Text>
+  </TouchableOpacity>
+
+
+  <TouchableOpacity
+    style={[
+      styles.opcaoTipo,
+      tipo === 'Doação' && styles.opcaoSelecionada,
+    ]}
+    onPress={() => setTipo('Doação')}
+  >
+      <Text
+      style={[
+        styles.textoOpcao,
+        tipo === 'Doação' && styles.textoSelecionado,
+      ]} >
+      Doação
+      </Text>
+        </TouchableOpacity>
+
+    </View>
 
       <Text style={styles.label}>
         Local
@@ -158,6 +193,37 @@ export default function AdicionarFichaScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  opcoesTipo: {
+  flexDirection: 'row',
+  gap: 10,
+  marginBottom: 10,
+},
+
+  opcaoTipo: {
+  flex: 1,
+  height: 50,
+  borderWidth: 1,
+  borderColor: '#CCCCCC',
+  borderRadius: 8,
+  justifyContent: 'center',
+  alignItems: 'center',
+  backgroundColor: '#FFFFFF',
+  },
+
+  opcaoSelecionada: {
+  backgroundColor: '#147DBA',
+  borderColor: '#147DBA',
+  },
+
+  textoOpcao: {
+  fontSize: 16,
+  fontWeight: '600',
+  color: '#147DBA',
+  },
+
+  textoSelecionado: {
+  color: '#FFFFFF',
+  },
 
   container: {
     flexGrow: 1,
@@ -207,7 +273,7 @@ const styles = StyleSheet.create({
 
   botaoSalvar: {
     height: 52,
-    backgroundColor: '#7A4E2D',
+    backgroundColor: '#147DBA',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -228,7 +294,7 @@ const styles = StyleSheet.create({
   },
 
   textoCancelar: {
-    color: '#7A4E2D',
+    color: '#147DBA',
     fontSize: 16,
     fontWeight: '600',
   },
