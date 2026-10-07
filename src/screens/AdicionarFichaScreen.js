@@ -13,3 +13,4 @@ export default function AdicionarFichaScreen() {
       <PopupFichas />
     </View>
   );
+}

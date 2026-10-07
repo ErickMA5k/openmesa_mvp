@@ -6,11 +6,11 @@ import AppNavigator from './src/navigation/AppNavigator';
 export default function App() {
   return (
     <AuthProvider>
-    <FichaProvider>
+    <FichasProvider>
       <NavigationContainer>
         <AppNavigator />
       </NavigationContainer>
-    </FichaProvider>
+    </FichasProvider>
     </AuthProvider>
   );
 }
