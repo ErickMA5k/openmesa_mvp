@@ -23,7 +23,7 @@ const PopupFichas = () => {
         setErro('');
     }
 
-    function registrarFicha(tipo) {
+    async function registrarFicha(tipo) {
         const quantidade = Number(registroTexto);
 
         if (!Number.isInteger(quantidade) || quantidade <= 0) {
@@ -31,9 +31,14 @@ const PopupFichas = () => {
             return;
         }
 
-        adicionarFicha(tipo, quantidade);
-        setSucesso(true);
-        fecharPopup();
+        try {
+            await adicionarFicha(tipo, quantidade);
+            setSucesso(true);
+            fecharPopup();
+        } catch (error) {
+            console.log('Erro ao registrar ficha:', error);
+            setErro('Não foi possível salvar a ficha.');
+        }
     }
 
     useEffect(() => {
@@ -174,4 +179,3 @@ const styles = StyleSheet.create({
 });
 
 export default PopupFichas;
-

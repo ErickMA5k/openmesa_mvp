@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-labelledby="title desc">
+  <title id="title">Open Mesa</title>
+  <desc id="desc">Círculo azul com o texto Open Mesa em branco</desc>
+  <defs>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2B78B8"/>
+      <stop offset="1" stop-color="#163D78"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#102C59" flood-opacity=".28"/>
+    </filter>
+  </defs>
+  <circle cx="160" cy="160" r="112" fill="url(#blue)" filter="url(#shadow)"/>
+  <circle cx="160" cy="160" r="112" fill="none" stroke="#FFFFFF" stroke-opacity=".12" stroke-width="2"/>
+  <text x="160" y="151" text-anchor="middle" fill="#FFFFFF" font-family="Georgia, serif" font-size="38" font-weight="700">Open</text>
+  <text x="160" y="190" text-anchor="middle" fill="#FFFFFF" font-family="Georgia, serif" font-size="34" font-weight="700">Mesa</text>
+</svg>

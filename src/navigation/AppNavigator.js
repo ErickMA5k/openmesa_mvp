@@ -17,9 +17,9 @@ export default function AppNavigator() {
       {usuario ? (
         <>
           <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="AdicionarFicha" component={AdicionarFichaScreen} />
+          <Stack.Screen name="AdicionarFicha" component={AdicionarFichaScreen} options={{ title: 'Adicionar Ficha' }} />
           <Stack.Screen name="Historico" component={HistoricoScreen} />
-          <Stack.Screen name="Calendario" component={CalendarioScreen} />
+          <Stack.Screen name="Calendario" component={CalendarioScreen} options={{ title: 'Calendário' }} />
         </>
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} />
