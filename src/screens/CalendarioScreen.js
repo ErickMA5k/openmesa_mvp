@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
+import { useFichas } from '../context/FichasContext';
+
 import {
   View,
   Text,
@@ -12,32 +14,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function CalendarioScreen({ navigation }) {
 
-  const [fichas, setFichas] = useState([]);
+  const { totalFichas } = useFichas();
   const [mesAtual, setMesAtual] = useState(new Date());
 
   const azul = '#147DBA';
   const azulEscuro = '#172A55';
-
-  useEffect(() => {
-    carregarFichas();
-  }, []);
-
-  async function carregarFichas() {
-    try {
-      const dados = await AsyncStorage.getItem(
-        '@openmesa:fichas'
-      );
-
-      if (dados) {
-        setFichas(JSON.parse(dados));
-      } else {
-        setFichas([]);
-      }
-
-    } catch (error) {
-      console.log('Erro ao carregar fichas:', error);
-    }
-  }
 
   const ano = mesAtual.getFullYear();
   const mes = mesAtual.getMonth();
@@ -79,31 +60,21 @@ export default function CalendarioScreen({ navigation }) {
     );
   }
 
-  function possuiFicha(dia) {
-
-    const data = `${String(dia).padStart(2, '0')}/${String(
-      mes + 1
-    ).padStart(2, '0')}/${ano}`;
-
-    return fichas.some(
-      (ficha) => ficha.data === data
-    );
+  // Usa o totalFichas como hook para inicializar a contagem de fichas
+  function obterQuantidadeFichasDoDia(dia) {
+    const dataFormatada = `${String(dia).padStart(2, '0')}/${String(mes + 1).padStart(2, '0')}/${ano}`;
+    // A função totalFichas(data) do FichasContext já soma automaticamente o campo .quantidade de cada lote do dia
+    return totalFichas(dataFormatada);
   }
-
-  function fichasDoMes() {
-
-    return fichas.filter((ficha) => {
-
-      const partes = ficha.data.split('/');
-
-      const mesFicha = Number(partes[1]);
-      const anoFicha = Number(partes[2]);
-
-      return (
-        mesFicha === mes + 1 &&
-        anoFicha === ano
-      );
-    });
+  
+  
+  // Utiliza o obterQuantidadeFichasdoDia para determinar a quantidade total de fichas presente em um mês
+  function totalFichasDoMes() {
+    let somaMes = 0;
+    for (let dia = 1; dia <= quantidadeDias; dia++) {
+      somaMes += obterQuantidadeFichasDoDia(dia);
+    }
+    return somaMes;
   }
 
   const dias = [];
@@ -119,10 +90,12 @@ export default function CalendarioScreen({ navigation }) {
     );
   }
 
-  // Dias do mês
+  // Dias do mês atualizados para contar fichas individualmente
   for (let dia = 1; dia <= quantidadeDias; dia++) {
 
-    const temFicha = possuiFicha(dia);
+    const quantidadeFichasDia = obterQuantidadeFichasDoDia(dia);
+    const temFicha = quantidadeFichasDia > 0;
+  
 
     dias.push(
       <TouchableOpacity
@@ -152,16 +125,23 @@ export default function CalendarioScreen({ navigation }) {
         </View>
 
         {temFicha && (
-          <View style={styles.ponto} />
+          <View style={styles.indicadorContainer}>
+            <View style={styles.ponto} />
+            {quantidadeFichasDia > 1 && (
+              <Text style={styles.textoQuantidadeDia}>
+                {quantidadeFichasDia}
+              </Text>
+            )}
+          </View>
         )}
 
       </TouchableOpacity>
     );
   }
 
-  return (
+  return ( 
     <ScrollView
-      contentContainerStyle={styles.container}
+      contentContainerStyle={styles.container} 
     >
 
       {/* VOLTAR */}
@@ -258,7 +238,7 @@ export default function CalendarioScreen({ navigation }) {
         </Text>
 
         <Text style={styles.quantidade}>
-          {fichasDoMes().length}
+          {totalFichasDoMes()}
         </Text>
 
       </View>
@@ -267,7 +247,7 @@ export default function CalendarioScreen({ navigation }) {
   );
 }
 
-
+//Cores e design para cada componente da tela
 const styles = StyleSheet.create({
 
   container: {
@@ -397,7 +377,19 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     backgroundColor: '#147DBA',
+  },
+
+  indicadorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 2,
+  },
+
+  textoQuantidadeDia: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#147DBA',
+    marginLeft: 2,
   },
 
 

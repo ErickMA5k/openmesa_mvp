@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   View,
@@ -6,218 +6,155 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
 } from 'react-native';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFichas } from '../context/FichasContext';
 
-function normalizarFichas(lista) {
-  if (!Array.isArray(lista)) {
-    return [];
-  }
-
-  return lista
-    .filter(Boolean)
-    .map((ficha, index) => {
-      const quantidade = Number(ficha.quantidade ?? 0);
-      const valor = Number(ficha.valor ?? 0);
-      const total = Number(
-        ficha.total ?? quantidade * valor
-      );
-
-      return {
-        id: ficha.id ?? `${ficha.data ?? 'ficha'}-${index}`,
-        tipo: ficha.tipo ?? ficha.descricao ?? 'Ficha',
-        local: ficha.local ?? 'Local não informado',
-        quantidade,
-        valor,
-        total,
-        data: ficha.data ?? new Date().toLocaleDateString('pt-BR'),
-      };
-    });
+function formatarValor(valor) {
+  return Number(valor || 0)
+    .toFixed(2)
+    .replace('.', ',');
 }
 
 export default function HistoricoScreen() {
-  const [fichas, setFichas] = useState([]);
+  // As fichas vêm do Context (que já lê, valida e grava no armazenamento)
+  const { fichas, carregando, erroCarregamento, removerFicha } = useFichas();
 
-  const carregarFichas = async () => {
-    try {
-      const dados = await AsyncStorage.getItem('@openmesa:fichas');
+  // Id da ficha que está aguardando confirmação de exclusão (null = nenhuma)
+  const [idParaConfirmar, setIdParaConfirmar] = useState(null);
 
-      if (!dados) {
-        setFichas([]);
-        return;
-      }
+  // Aviso exibido no topo: { tipo: 'sucesso' | 'erro', texto: '...' } ou null
+  const [mensagem, setMensagem] = useState(null);
 
-      const fichasSalvas = JSON.parse(dados);
-      setFichas(normalizarFichas(fichasSalvas));
-    } catch (error) {
-      console.log('Erro ao carregar fichas:', error);
-
-      Alert.alert(
-        'Erro',
-        'Não foi possível carregar o histórico.'
-      );
-    }
-  };
-
+  // A mensagem de sucesso some sozinha depois de alguns segundos
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    carregarFichas();
-  }, []);
+    if (!mensagem || mensagem.tipo !== 'sucesso') return;
+    const temporizador = setTimeout(() => setMensagem(null), 3000);
+    return () => clearTimeout(temporizador);
+  }, [mensagem]);
 
-  const excluirFicha = async (id) => {
+  function pedirConfirmacao(id) {
+    setMensagem(null);
+    setIdParaConfirmar(id);
+  }
+
+  async function excluirFicha(id) {
     try {
-      const novasFichas = fichas.filter(
-        (ficha) => ficha.id !== id
-      );
-
-      await AsyncStorage.setItem(
-        '@openmesa:fichas',
-        JSON.stringify(novasFichas)
-      );
-
-      setFichas(novasFichas);
-
-      Alert.alert(
-        'Sucesso',
-        'Ficha excluída.'
-      );
+      await removerFicha(id);
+      setMensagem({ tipo: 'sucesso', texto: 'Ficha excluída.' });
     } catch (error) {
       console.log('Erro ao excluir ficha:', error);
-
-      Alert.alert(
-        'Erro',
-        'Não foi possível excluir a ficha.'
-      );
+      setMensagem({
+        tipo: 'erro',
+        texto: error.message || 'Não foi possível excluir a ficha.',
+      });
+    } finally {
+      setIdParaConfirmar(null);
     }
-  };
-
-  function confirmarExclusao(id) {
-    Alert.alert(
-      'Excluir ficha',
-      'Deseja realmente excluir esta ficha?',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: () => excluirFicha(id),
-        },
-      ]
-    );
   }
 
-  function formatarValor(valor) {
-    return Number(valor || 0)
-      .toFixed(2)
-      .replace('.', ',');
-  }
+  const listaVazia =
+    !carregando && erroCarregamento === '' && fichas.length === 0;
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-    >
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.titulo}>Histórico</Text>
 
-      <Text style={styles.titulo}>
-        Histórico
-      </Text>
+      {erroCarregamento !== '' && (
+        <Text style={styles.mensagemErro}>{erroCarregamento}</Text>
+      )}
 
-      {fichas.length === 0 ? (
+      {mensagem && (
+        <Text
+          style={
+            mensagem.tipo === 'erro'
+              ? styles.mensagemErro
+              : styles.mensagemSucesso
+          }
+        >
+          {mensagem.texto}
+        </Text>
+      )}
 
+      {carregando && (
+        <Text style={styles.vazioTexto}>Carregando fichas...</Text>
+      )}
+
+      {listaVazia && (
         <View style={styles.vazio}>
-
-          <Text style={styles.vazioTitulo}>
-            Nenhuma ficha cadastrada
-          </Text>
+          <Text style={styles.vazioTitulo}>Nenhuma ficha cadastrada</Text>
 
           <Text style={styles.vazioTexto}>
             As fichas cadastradas aparecerão aqui.
           </Text>
-
         </View>
-
-      ) : (
-
-        fichas.map((ficha) => (
-
-          <View
-            key={ficha.id}
-            style={styles.card}
-          >
-
-            <View style={styles.cabecalhoCard}>
-
-              <Text style={styles.tipo}>
-                {ficha.tipo ?? 'Ficha'}
-              </Text>
-
-              <Text style={styles.data}>
-                {ficha.data ?? 'Data indisponível'}
-              </Text>
-
-            </View>
-
-            <Text style={styles.local}>
-              {ficha.local ?? 'Local não informado'}
-            </Text>
-
-            <View style={styles.informacoes}>
-
-              <View>
-                <Text style={styles.label}>
-                  Quantidade
-                </Text>
-
-                <Text style={styles.valor}>
-                  {ficha.quantidade}
-                </Text>
-              </View>
-
-              <View>
-                <Text style={styles.label}>
-                  Valor/refeição
-                </Text>
-
-                <Text style={styles.valor}>
-                  R$ {formatarValor(ficha.valor)}
-                </Text>
-              </View>
-
-              <View>
-                <Text style={styles.label}>
-                  Total
-                </Text>
-
-                <Text style={styles.total}>
-                  R$ {formatarValor(ficha.total)}
-                </Text>
-              </View>
-
-            </View>
-
-            <TouchableOpacity
-              style={styles.botaoExcluir}
-              onPress={() => confirmarExclusao(ficha.id)}
-            >
-              <Text style={styles.textoExcluir}>
-                Excluir
-              </Text>
-            </TouchableOpacity>
-
-          </View>
-
-        ))
-
       )}
 
+      {fichas.map((ficha) => (
+        <View key={ficha.id} style={styles.card}>
+          <View style={styles.cabecalhoCard}>
+            <Text style={styles.tipo}>{ficha.tipo}</Text>
+
+            <Text style={styles.data}>{ficha.data}</Text>
+          </View>
+
+          <Text style={styles.local}>{ficha.local}</Text>
+
+          <View style={styles.informacoes}>
+            <View>
+              <Text style={styles.label}>Quantidade</Text>
+
+              <Text style={styles.valor}>{ficha.quantidade}</Text>
+            </View>
+
+            <View>
+              <Text style={styles.label}>Valor/refeição</Text>
+
+              <Text style={styles.valor}>R$ {formatarValor(ficha.valor)}</Text>
+            </View>
+
+            <View>
+              <Text style={styles.label}>Total</Text>
+
+              <Text style={styles.total}>R$ {formatarValor(ficha.total)}</Text>
+            </View>
+          </View>
+
+          {idParaConfirmar === ficha.id ? (
+            <View style={styles.confirmacao}>
+              <Text style={styles.textoConfirmacao}>Excluir esta ficha?</Text>
+
+              <View style={styles.linhaConfirmacao}>
+                <TouchableOpacity
+                  style={styles.botaoConfirmar}
+                  onPress={() => excluirFicha(ficha.id)}
+                >
+                  <Text style={styles.textoConfirmar}>Sim, excluir</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.botaoDesistir}
+                  onPress={() => setIdParaConfirmar(null)}
+                >
+                  <Text style={styles.textoDesistir}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.botaoExcluir}
+              onPress={() => pedirConfirmacao(ficha.id)}
+            >
+              <Text style={styles.textoExcluir}>Excluir</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ))}
     </ScrollView>
   );
 }
-
+//Cores e design para cada componente da tela
+//Não esquecer de atualizar para utilizar o padrão do index.jx
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
@@ -229,6 +166,20 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
+  },
+
+  mensagemErro: {
+    color: '#B3261E',
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 15,
+  },
+
+  mensagemSucesso: {
+    color: '#1F5F4A',
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 15,
   },
 
   vazio: {
@@ -311,6 +262,52 @@ const styles = StyleSheet.create({
 
   textoExcluir: {
     color: '#B00020',
+    fontWeight: '600',
+  },
+
+  confirmacao: {
+    marginTop: 18,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#DDDDDD',
+  },
+
+  textoConfirmacao: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#212121',
+  },
+
+  linhaConfirmacao: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 10,
+  },
+
+  botaoConfirmar: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    backgroundColor: '#B00020',
+  },
+
+  textoConfirmar: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+
+  botaoDesistir: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#BBBBBB',
+  },
+
+  textoDesistir: {
+    color: '#555555',
     fontWeight: '600',
   },
 });
