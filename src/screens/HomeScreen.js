@@ -1,8 +1,15 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useFichas } from '../context/FichasContext';
 import { espacos } from '../theme';
+
+const botoesPorPerfil = {
+  caixa: [
+    { titulo: 'Adicionar Ficha', descricao: 'Registrar uma nova ficha', tela: 'AdicionarFicha', simbolo: '+', principal: true },
+    { titulo: 'Histórico', descricao: 'Consultar fichas registradas', tela: 'Historico', simbolo: '≡' },
+    { titulo: 'Calendário', descricao: 'Visualizar fichas por data', tela: 'Calendario', simbolo: '□' },
+  ],
+};
 
 export default function HomeScreen({ navigation }) {
   const { usuario, sair } = useAuth();
@@ -12,6 +19,12 @@ export default function HomeScreen({ navigation }) {
     totalGeral,
     receitaTotal,
   } = useFichas();
+
+    const confirmarSaida = () =>
+    Alert.alert('Sair', 'Deseja realmente sair da conta?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Sair', style: 'destructive', onPress: sair },
+    ]);
 
   return (
     <View style={styles.container}>
@@ -46,81 +59,32 @@ export default function HomeScreen({ navigation }) {
         {/* Ações */}
 
       <View style={styles.acoes}>
+        {(botoesPorPerfil[usuario?.perfil] || []).map((b) => (
+          <TouchableOpacity
+            key={b.tela}
+            style={styles.cardAcao}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate(b.tela)}
+          >
+            <View style={b.principal ? styles.iconeAdicionar : styles.icone}>
+              <Text style={b.principal ? styles.iconeTexto : styles.iconeSimbolo}>
+                {b.simbolo}
+              </Text>
+            </View>
 
-        <TouchableOpacity
-          style={styles.cardAcao}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('AdicionarFicha')}
-        >
-          <View style={styles.iconeAdicionar}>
-            <Text style={styles.iconeTexto}>
-              +
-            </Text>
-          </View>
-
-          <View>
-            <Text style={styles.cardTitulo}>
-              Adicionar Ficha
-            </Text>
-
-            <Text style={styles.cardDescricao}>
-              Registrar uma nova ficha
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.cardAcao}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('Historico')}
-        >
-          <View style={styles.icone}>
-            <Text style={styles.iconeSimbolo}>
-              ≡
-            </Text>
-          </View>
-
-          <View>
-            <Text style={styles.cardTitulo}>
-              Histórico
-            </Text>
-
-            <Text style={styles.cardDescricao}>
-              Consultar fichas registradas
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.cardAcao}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('Calendario')}
-        >
-          <View style={styles.icone}>
-            <Text style={styles.iconeSimbolo}>
-              □
-            </Text>
-          </View>
-
-          <View>
-            <Text style={styles.cardTitulo}>
-              Calendário
-            </Text>
-
-            <Text style={styles.cardDescricao}>
-              Visualizar fichas por data
-            </Text>
-          </View>
-        </TouchableOpacity>
-
+            <View>
+              <Text style={styles.cardTitulo}>{b.titulo}</Text>
+              <Text style={styles.cardDescricao}>{b.descricao}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Sair */}
       <TouchableOpacity
         style={styles.botaoSair}
         activeOpacity={0.7}
-        onPress={sair}
-      >
+        onPress={confirmarSaida}>
         <Text style={styles.textoSair}>
           Sair da conta
         </Text>

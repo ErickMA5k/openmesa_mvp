@@ -5,13 +5,12 @@ import {
   Image,
   StyleSheet,
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
 } from 'react-native';
-
 import Input from '../components/Input';
 import Botao from '../components/Botao';
 import { useAuth } from '../context/AuthContext';
+import { usuarios } from '../data/usuarios';
 
 export default function LoginScreen() {
   const { entrar } = useAuth();
@@ -46,17 +45,27 @@ export default function LoginScreen() {
       return;
     }
 
-    // Login
+    // Confere se o usuário e a senha existem na lista
+    const encontrado = usuarios.find(
+      (u) => u.usuario === usuario.trim().toLowerCase() && u.senha === senha
+    );
+
+    if (!encontrado) {
+      setErroSenha('Usuário ou senha inválidos');
+      return;
+    }
+
+    // Login com os dados cadastrados
     entrar({
-      nome: usuario,
-      perfil: 'caixa',
+      nome: encontrado.nome,
+      perfil: encontrado.perfil,
     });
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.tela}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior="padding"
     >
       <ScrollView
         contentContainerStyle={styles.container}
