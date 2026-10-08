@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-
+import { cores, espacos , fontes } from '../theme';
 import {
   View,
   Text,
@@ -163,48 +163,49 @@ const styles = StyleSheet.create({
   },
 
   titulo: {
-    fontSize: 28,
+    fontSize: fontes.g,
     fontWeight: 'bold',
-    marginBottom: 20,
+    color: cores.texto,
+    marginBottom: espacos.m,
   },
 
   mensagemErro: {
-    color: '#B3261E',
-    fontSize: 15,
+    color: cores.perigo,
+    fontSize: fontes.p,
     fontWeight: '600',
-    marginBottom: 15,
+    marginBottom: espacos.m,
   },
 
   mensagemSucesso: {
     color: '#1F5F4A',
-    fontSize: 15,
+    fontSize: fontes.p,
     fontWeight: '600',
-    marginBottom: 15,
+    marginBottom: espacos.m,
   },
 
   vazio: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 80,
+    paddingVertical: espacos.g,
   },
 
   vazioTitulo: {
-    fontSize: 20,
+    fontSize: fontes.m,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: espacos.p,
   },
 
   vazioTexto: {
-    fontSize: 15,
+    fontSize: fontes.p,
     color: '#666666',
     textAlign: 'center',
   },
 
   card: {
-    backgroundColor: '#F7F7F7',
+    backgroundColor: cores.fundo,
     borderRadius: 12,
-    padding: 18,
-    marginBottom: 15,
+    padding: espacos.m,
+    marginBottom: espacos.m,
   },
 
   cabecalhoCard: {
@@ -214,20 +215,21 @@ const styles = StyleSheet.create({
   },
 
   tipo: {
-    fontSize: 19,
+    fontSize: fontes.m,
     fontWeight: 'bold',
+    color: cores.texto,
   },
 
   data: {
-    fontSize: 13,
+    fontSize: fontes.p,
     color: '#777777',
   },
 
   local: {
-    fontSize: 15,
+    fontSize: fontes.p,
     color: '#555555',
-    marginTop: 5,
-    marginBottom: 18,
+    marginTop: espacos.p,
+    marginBottom: espacos.m,
   },
 
   informacoes: {
@@ -236,28 +238,29 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: 12,
+    fontSize: fontes.p,
     color: '#777777',
-    marginBottom: 4,
+    marginBottom: espacos.p,
   },
 
   valor: {
-    fontSize: 15,
+    fontSize: fontes.p,
     fontWeight: '600',
+    color: cores.texto,
   },
 
   total: {
-    fontSize: 16,
+    fontSize: fontes.p,
     fontWeight: 'bold',
-    color: '#7A4E2D',
+    color: cores.primaria,
   },
 
   botaoExcluir: {
-    marginTop: 18,
-    paddingVertical: 10,
+    marginTop: espacos.m,
+    paddingVertical: espacos.p,
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#DDDDDD',
+    borderTopColor: cores.borda,
   },
 
   textoExcluir: {
@@ -266,44 +269,44 @@ const styles = StyleSheet.create({
   },
 
   confirmacao: {
-    marginTop: 18,
-    paddingTop: 12,
+    marginTop: espacos.m,
+    paddingTop: espacos.p,
     borderTopWidth: 1,
-    borderTopColor: '#DDDDDD',
+    borderTopColor: cores.borda,
   },
 
   textoConfirmacao: {
-    fontSize: 15,
+    fontSize: fontes.p,
     fontWeight: '600',
-    color: '#212121',
+    color: cores.texto,
   },
 
   linhaConfirmacao: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 10,
+    gap: espacos.p,
+    marginTop: espacos.p,
   },
 
   botaoConfirmar: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: espacos.p,
     borderRadius: 8,
     alignItems: 'center',
-    backgroundColor: '#B00020',
+    backgroundColor: cores.perigo,
   },
 
   textoConfirmar: {
-    color: '#FFFFFF',
+    color: cores.secundaria,
     fontWeight: '600',
   },
 
   botaoDesistir: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: espacos.p,
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#BBBBBB',
+    borderColor: cores.borda,
   },
 
   textoDesistir: {

@@ -11,15 +11,11 @@ import {
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { cores, espacos, fontes } from '../theme';
 
 export default function CalendarioScreen({ navigation }) {
-
-  const { totalFichas } = useFichas();
-  const [mesAtual, setMesAtual] = useState(new Date());
-
-  const azul = '#147DBA';
-  const azulEscuro = '#172A55';
-
+const { totalFichas } = useFichas();
+const [mesAtual, setMesAtual] = useState(new Date());
   const ano = mesAtual.getFullYear();
   const mes = mesAtual.getMonth();
 
@@ -104,6 +100,7 @@ export default function CalendarioScreen({ navigation }) {
           styles.dia,
           temFicha && styles.diaComFicha,
         ]}
+        onPress={() => navigation.navigate('Historico')}
       >
 
         <View
@@ -276,7 +273,7 @@ const styles = StyleSheet.create({
   /* TÍTULO */
 
   titulo: {
-    fontSize: 27,
+    fontSize: fontes.g,
     fontWeight: 'bold',
     color: '#222222',
     marginTop: 15,
@@ -294,7 +291,7 @@ const styles = StyleSheet.create({
   },
 
   nomeMes: {
-    fontSize: 18,
+    fontSize: fontes.m,
     fontWeight: 'bold',
     color: '#172A55',
   },
@@ -325,7 +322,7 @@ const styles = StyleSheet.create({
   nomeSemana: {
     width: '14.28%',
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: fontes.p,
     fontWeight: 'bold',
     color: '#777777',
   },
@@ -363,7 +360,7 @@ const styles = StyleSheet.create({
   },
 
   numero: {
-    fontSize: 14,
+    fontSize: fontes.p,
     color: '#333333',
   },
 
@@ -386,7 +383,7 @@ const styles = StyleSheet.create({
   },
 
   textoQuantidadeDia: {
-    fontSize: 9,
+    fontSize: fontes.p,
     fontWeight: 'bold',
     color: '#147DBA',
     marginLeft: 2,
@@ -410,7 +407,7 @@ const styles = StyleSheet.create({
   },
 
   textoLegenda: {
-    fontSize: 13,
+    fontSize: fontes.p,
     color: '#666666',
   },
 
@@ -425,13 +422,13 @@ const styles = StyleSheet.create({
   },
 
   resumoTitulo: {
-    fontSize: 15,
+    fontSize: fontes.m,
     color: '#666666',
     marginBottom: 8,
   },
 
   quantidade: {
-    fontSize: 30,
+    fontSize: fontes.g,
     fontWeight: 'bold',
     color: '#172A55',
   },
