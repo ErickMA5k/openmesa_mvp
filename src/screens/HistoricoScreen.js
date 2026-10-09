@@ -16,9 +16,9 @@ function formatarValor(valor) {
     .replace('.', ',');
 }
 
-export default function HistoricoScreen() {
+export default function HistoricoScreen({ navigation, route }) {
   // As fichas vêm do Context (que já lê, valida e grava no armazenamento)
-  const { fichas, carregando, erroCarregamento, removerFicha } = useFichas();
+  const { fichas, carregando, erroCarregamento, removerFicha, fichasDoDia, totalFichas,receitaTotal } = useFichas();
 
   // Id da ficha que está aguardando confirmação de exclusão (null = nenhuma)
   const [idParaConfirmar, setIdParaConfirmar] = useState(null);
@@ -32,6 +32,16 @@ export default function HistoricoScreen() {
     const temporizador = setTimeout(() => setMensagem(null), 3000);
     return () => clearTimeout(temporizador);
   }, [mensagem]);
+
+  const dataFiltro = route?.params?.data ?? null;
+
+  const fichasExibidas = dataFiltro ? fichasDoDia(dataFiltro) : fichas;
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: dataFiltro ? `Histórico de ${dataFiltro}` : 'Histórico',
+    });
+  }, [navigation, dataFiltro]);
 
   function pedirConfirmacao(id) {
     setMensagem(null);
@@ -54,12 +64,34 @@ export default function HistoricoScreen() {
   }
 
   const listaVazia =
-    !carregando && erroCarregamento === '' && fichas.length === 0;
+      !carregando && erroCarregamento === '' && fichasExibidas.length === 0;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.titulo}>Histórico</Text>
+     <Text style={styles.titulo}>
+        {dataFiltro ? `Fichas de ${dataFiltro}` : 'Histórico'}
+      </Text>
 
+      {dataFiltro && !carregando && (
+        <View style={styles.resumoDia}>
+          <View>
+            <Text style={styles.label}>Fichas no dia</Text>
+            <Text style={styles.valor}>{totalFichas(dataFiltro)}</Text>
+          </View>
+
+          <View>
+            <Text style={styles.label}>Receita do dia</Text>
+            <Text style={styles.total}>R$ {formatarValor(receitaTotal(dataFiltro))}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.botaoVerTudo}
+            onPress={() => navigation.setParams({ data: undefined })}
+          >
+            <Text style={styles.textoVerTudo}>Ver todas</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       {erroCarregamento !== '' && (
         <Text style={styles.mensagemErro}>{erroCarregamento}</Text>
       )}
@@ -82,15 +114,19 @@ export default function HistoricoScreen() {
 
       {listaVazia && (
         <View style={styles.vazio}>
-          <Text style={styles.vazioTitulo}>Nenhuma ficha cadastrada</Text>
+         <Text style={styles.vazioTitulo}>
+            {dataFiltro ? 'Nenhuma ficha neste dia' : 'Nenhuma ficha cadastrada'}
+          </Text>
 
           <Text style={styles.vazioTexto}>
-            As fichas cadastradas aparecerão aqui.
+            {dataFiltro
+              ? `Não há fichas registradas em ${dataFiltro}.`
+              : 'As fichas cadastradas aparecerão aqui.'}
           </Text>
         </View>
       )}
 
-      {fichas.map((ficha) => (
+      {fichasExibidas.map((ficha) => (
         <View key={ficha.id} style={styles.card}>
           <View style={styles.cabecalhoCard}>
             <Text style={styles.tipo}>{ficha.tipo}</Text>
@@ -199,6 +235,29 @@ const styles = StyleSheet.create({
     fontSize: fontes.p,
     color: '#666666',
     textAlign: 'center',
+  },
+resumoDia: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F7F7F7',
+    borderRadius: 12,
+    padding: espacos.m,
+    marginBottom: espacos.m,
+  },
+
+  botaoVerTudo: {
+    paddingVertical: espacos.p,
+    paddingHorizontal: espacos.m,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: cores.primaria,
+  },
+
+  textoVerTudo: {
+    color: cores.primaria,
+    fontWeight: '600',
+    fontSize: fontes.p,
   },
 
   card: {

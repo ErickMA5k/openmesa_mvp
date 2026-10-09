@@ -100,7 +100,11 @@ const [mesAtual, setMesAtual] = useState(new Date());
           styles.dia,
           temFicha && styles.diaComFicha,
         ]}
-        onPress={() => navigation.navigate('Historico')}
+        onPress={() =>
+          navigation.push('Historico', {
+            data: `${String(dia).padStart(2, '0')}/${String(mes + 1).padStart(2, '0')}/${ano}`,
+          })
+        }
       >
 
         <View
