@@ -5,7 +5,7 @@ Aplicativo Expo/React Native para gestão de fichas e operações do caixa.
 ## Usuários de teste
 
 | Usuário | Senha | Nome | Perfil |
-|---|---|---|
+| :--- | :--- | :--- | :--- |
 | caixa1 | 1234 | Caixa1 | caixa |
 | caixa2 | 1234 | Caixa2 | caixa |
 
