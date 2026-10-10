@@ -83,5 +83,5 @@ npm start
 ```
 
 Em seguida, escolha o alvo desejado no menu do Expo (`android`, `ios` ou `web`).
->>>>>>> 2f88c05dc731a99c19631cbc3b6903c7c01853b0
+
 
