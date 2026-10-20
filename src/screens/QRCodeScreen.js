@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Linking } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFichas, TIPOS } from '../context/FichasContext';
 import Botao from '../components/Botao';
@@ -10,6 +10,13 @@ const COR_CONTORNO = {
   aguardando: '#FFFFFF',
   sucesso: '#2E7D32', // verde
   erro: '#C62828',    // vermelho
+};
+
+// Cor do ícone do pop-up conforme o tipo de resultado
+const COR_POPUP = {
+  sucesso: '#2E7D32',
+  erro: '#C62828',
+  aviso: '#ED8F00',
 };
 
 // Tempo (em milissegundos) sem enxergar o QR Code para liberar uma nova leitura
@@ -31,6 +38,11 @@ export default function QRCodeScreen({ navigation }) {
   const [refeicoes, setRefeicoes] = useState(0);
   const [status, setStatus] = useState('aguardando'); // aguardando | sucesso | erro
 
+  // Pop-up de resultado: { tipo: 'sucesso' | 'erro' | 'aviso', titulo, mensagem, voltar } ou null
+  const [popup, setPopup] = useState(null);
+  const [salvando, setSalvando] = useState(false); // true enquanto grava as fichas
+  const [erroCamera, setErroCamera] = useState(''); // mensagem se a câmera não iniciar
+
   // Refs guardam valores sem redesenhar a tela (a câmera chama aoLer várias vezes por segundo)
   const travado = useRef(false);      // true enquanto o mesmo QR Code continua na câmera
   const ultimaDeteccao = useRef(0);   // horário em que a câmera viu um QR Code pela última vez
@@ -49,6 +61,7 @@ export default function QRCodeScreen({ navigation }) {
   // Chamada pela câmera toda vez que ela enxerga um QR Code
   const aoLer = ({ data }) => {
     ultimaDeteccao.current = Date.now(); // marca que o QR Code ainda está à vista
+    if (salvando || popup) return;       // gravando ou com pop-up aberto: não conta leituras novas
     if (travado.current) return;         // já foi lido: ignora até ser reposicionado
     travado.current = true;
 
@@ -63,33 +76,105 @@ export default function QRCodeScreen({ navigation }) {
     setStatus('sucesso'); // leitura válida: contorno verde
   };
 
-  // Registra no histórico as quantidades lidas
+  // Registra no histórico as quantidades lidas e avisa o resultado em um pop-up
   const confirmar = async () => {
+    if (salvando) return; // evita toque duplo em "Confirmar"
+
     if (marmitas + refeicoes === 0) {
-      return Alert.alert('Nada para registrar', 'Leia ao menos um QR Code.');
+      setPopup({
+        tipo: 'aviso',
+        titulo: 'Nada para registrar',
+        mensagem: 'Leia ao menos um QR Code antes de confirmar.',
+        voltar: false,
+      });
+      return;
     }
+
+    // Guarda o que será registrado para mostrar no pop-up depois de zerar os contadores
+    const qtdMarmitas = marmitas;
+    const qtdRefeicoes = refeicoes;
+
+    setSalvando(true);
     try {
-      if (marmitas > 0) await adicionarFicha(TIPOS.MARMITA, marmitas);
-      if (refeicoes > 0) await adicionarFicha(TIPOS.REFEICAO, refeicoes);
-      setMarmitas(0);
-      setRefeicoes(0);
-      Alert.alert('Pronto', 'Fichas registradas com sucesso!', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      if (qtdMarmitas > 0) {
+        await adicionarFicha(TIPOS.MARMITA, qtdMarmitas);
+        setMarmitas(0); // zera já: se o próximo registro falhar, estas não são repetidas
+      }
+      if (qtdRefeicoes > 0) {
+        await adicionarFicha(TIPOS.REFEICAO, qtdRefeicoes);
+        setRefeicoes(0);
+      }
+
+      const linhas = [];
+      if (qtdMarmitas > 0) linhas.push(`${qtdMarmitas} ${qtdMarmitas === 1 ? 'marmita' : 'marmitas'}`);
+      if (qtdRefeicoes > 0) linhas.push(`${qtdRefeicoes} ${qtdRefeicoes === 1 ? 'refeição' : 'refeições'}`);
+
+      setPopup({
+        tipo: 'sucesso',
+        titulo: 'Leituras registradas!',
+        mensagem: `Foram registradas no sistema: ${linhas.join(' e ')}.`,
+        voltar: true,
+      });
     } catch (erro) {
-      Alert.alert('Erro', erro.message);
+      setPopup({
+        tipo: 'erro',
+        titulo: 'Não foi possível registrar',
+        mensagem: erro?.message || 'Tente novamente.',
+        voltar: false,
+      });
+    } finally {
+      setSalvando(false);
     }
   };
 
-  // Enquanto a permissão carrega, mostra só o fundo preto
-  if (!permissao) return <View style={styles.tela} />;
+  // Fecha o pop-up; se o registro deu certo, também volta para a tela anterior
+  const fecharPopup = () => {
+    const deveVoltar = popup?.voltar;
+    setPopup(null);
+    if (deveVoltar) navigation.goBack();
+  };
 
-  // Sem permissão da câmera: explica e oferece o botão para permitir
+  // Seta de voltar: usada em TODOS os estados da tela (carregando, sem permissão, erro e câmera)
+  const botaoVoltar = (
+    <Pressable
+      style={styles.voltar}
+      onPress={() => navigation.goBack()}
+      hitSlop={16}
+      accessibilityRole="button"
+      accessibilityLabel="Voltar"
+    >
+      <Text style={styles.setaVoltar}>←</Text>
+    </Pressable>
+  );
+
+  // Enquanto a permissão carrega, mostra só o fundo preto (com a seta de voltar)
+  if (!permissao) return <View style={styles.tela}>{botaoVoltar}</View>;
+
+  // Sem permissão da câmera: explica, oferece permitir (ou abrir as configurações) e deixa voltar
   if (!permissao.granted) {
     return (
       <View style={[styles.tela, styles.centro]}>
+        {botaoVoltar}
         <Text style={styles.aviso}>Precisamos da câmera para ler os QR Codes.</Text>
-        <Botao titulo="Permitir câmera" onPress={pedirPermissao} />
+        {permissao.canAskAgain ? (
+          <Botao titulo="Permitir câmera" onPress={pedirPermissao} />
+        ) : (
+          <Botao titulo="Abrir configurações" onPress={() => Linking.openSettings()} />
+        )}
+        <Botao titulo="Voltar" variante="secundario" onPress={() => navigation.goBack()} />
+      </View>
+    );
+  }
+
+  // Câmera indisponível (sem câmera no aparelho, em uso por outro app, etc.)
+  if (erroCamera) {
+    return (
+      <View style={[styles.tela, styles.centro]}>
+        {botaoVoltar}
+        <Text style={styles.aviso}>Não foi possível iniciar a câmera.</Text>
+        <Text style={styles.avisoDetalhe}>{erroCamera}</Text>
+        <Botao titulo="Tentar novamente" onPress={() => setErroCamera('')} />
+        <Botao titulo="Voltar" variante="secundario" onPress={() => navigation.goBack()} />
       </View>
     );
   }
@@ -104,6 +189,7 @@ export default function QRCodeScreen({ navigation }) {
           facing="back"
           barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
           onBarcodeScanned={aoLer}
+          onMountError={(e) => setErroCamera(e?.message || 'Câmera indisponível neste aparelho.')}
         />
 
         {/* Contorno do leitor: quatro cantos que mudam de cor */}
@@ -116,9 +202,7 @@ export default function QRCodeScreen({ navigation }) {
           </View>
         </View>
 
-        <Pressable style={styles.voltar} onPress={() => navigation.goBack()}>
-          <Text style={styles.setaVoltar}>←</Text>
-        </Pressable>
+        {botaoVoltar}
       </View>
 
       {/* Contadores e botão de confirmar */}
@@ -133,8 +217,22 @@ export default function QRCodeScreen({ navigation }) {
             <Text style={styles.contadorValor}>{refeicoes}</Text>
           </View>
         </View>
-        <Botao titulo="Confirmar" onPress={confirmar} />
+        <Botao titulo={salvando ? 'Salvando...' : 'Confirmar'} onPress={confirmar} />
       </View>
+
+      {/* Pop-up de resultado (View sobreposta: funciona no celular e no navegador) */}
+      {popup && (
+        <View style={styles.popupFundo}>
+          <View style={styles.popupCartao}>
+            <Text style={[styles.popupIcone, { color: COR_POPUP[popup.tipo] }]}>
+              {popup.tipo === 'sucesso' ? '✓' : popup.tipo === 'erro' ? '✕' : '!'}
+            </Text>
+            <Text style={styles.popupTitulo}>{popup.titulo}</Text>
+            <Text style={styles.popupMensagem}>{popup.mensagem}</Text>
+            <Botao titulo="OK" onPress={fecharPopup} />
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -143,6 +241,7 @@ const styles = StyleSheet.create({
   tela: { flex: 1, backgroundColor: '#000000' },
   centro: { justifyContent: 'center', padding: espacos.g },
   aviso: { color: '#FFFFFF', fontSize: 16, textAlign: 'center', marginBottom: espacos.m },
+  avisoDetalhe: { color: '#BBBBBB', fontSize: 13, textAlign: 'center', marginBottom: espacos.m },
 
   areaCamera: { flex: 1 },
   centralizar: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
@@ -153,7 +252,7 @@ const styles = StyleSheet.create({
   baixoEsq: { bottom: 0, left: 0, borderBottomWidth: 5, borderLeftWidth: 5 },
   baixoDir: { bottom: 0, right: 0, borderBottomWidth: 5, borderRightWidth: 5 },
 
-  voltar: { position: 'absolute', top: 48, left: 20 },
+  voltar: { position: 'absolute', top: 48, left: 20, zIndex: 10 },
   setaVoltar: { color: '#FFFFFF', fontSize: 32 },
 
   rodape: { padding: espacos.m },
@@ -161,4 +260,17 @@ const styles = StyleSheet.create({
   contador: { flex: 1, backgroundColor: cores.escura, borderRadius: 16, padding: espacos.m, alignItems: 'center' },
   contadorRotulo: { color: '#DDDDDD', fontSize: 14 },
   contadorValor: { color: '#FFFFFF', fontSize: 28, fontWeight: 'bold' },
+
+  popupFundo: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: espacos.g,
+    zIndex: 20,
+  },
+  popupCartao: { width: '100%', maxWidth: 380, backgroundColor: '#FFFFFF', borderRadius: 16, padding: espacos.g, alignItems: 'center' },
+  popupIcone: { fontSize: 48, fontWeight: 'bold', marginBottom: espacos.p },
+  popupTitulo: { fontSize: 20, fontWeight: 'bold', color: cores.escura, textAlign: 'center', marginBottom: espacos.p },
+  popupMensagem: { fontSize: 16, color: cores.texto, textAlign: 'center', marginBottom: espacos.m },
 });
