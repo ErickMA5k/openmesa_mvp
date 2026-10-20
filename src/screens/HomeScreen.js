@@ -1,14 +1,28 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useFichas } from '../context/FichasContext';
 import { espacos } from '../theme';
 
+//Botões que o Caixa vê (o Fiscal também usa todos eles)
+const botoesCaixa = [
+  { titulo: 'Adicionar Ficha', descricao: 'Registrar uma nova ficha', tela: 'AdicionarFicha', simbolo: '+', principal: true },
+  { titulo: 'Histórico', descricao: 'Consultar fichas registradas', tela: 'Historico', simbolo: '≡' },
+  { titulo: 'Calendário', descricao: 'Visualizar fichas por data', tela: 'Calendario', simbolo: '□' },
+  { titulo: 'Escanear QR Code', descricao: 'Ler o QR Code das fichas', tela: 'QRCode', simbolo: '▣' },
+];
+
+//Lista de botões de cada perfil. A chave é o mesmo "perfil" do usuarios.js
 const botoesPorPerfil = {
-  caixa: [
-    { titulo: 'Adicionar Ficha', descricao: 'Registrar uma nova ficha', tela: 'AdicionarFicha', simbolo: '+', principal: true },
-    { titulo: 'Histórico', descricao: 'Consultar fichas registradas', tela: 'Historico', simbolo: '≡' },
-    { titulo: 'Calendário', descricao: 'Visualizar fichas por data', tela: 'Calendario', simbolo: '□' },
-    { titulo: 'Escanear QR Code', descricao: 'Ler o QR Code das fichas', tela: 'QRCode', simbolo: '▣' },
+  caixa: botoesCaixa,
+  fiscal: [
+    ...botoesCaixa, // copia todos os botões do Caixa para dentro da lista do Fiscal
+    { titulo: 'Marmitas de convênio', descricao: 'Pedidos feitos pelas empresas', tela: 'MarmitasConvenio', simbolo: '≡' },
+    { titulo: 'Relatórios', descricao: 'Planilhas de vendas', tela: 'Relatorios', simbolo: '↓' },
+    { titulo: 'Pagamentos de convênios', descricao: 'Pedidos finalizados e pagamentos', tela: 'PagamentosConvenios', simbolo: '$' },
+  ],
+  empresa: [
+    { titulo: 'Fazer pedido', descricao: 'Solicitar marmitas ao restaurante', tela: 'FazerPedido', simbolo: '+', principal: true },
+    { titulo: 'Histórico de pedidos', descricao: 'Consultar pedidos feitos', tela: 'HistoricoPedidos', simbolo: '≡' },
   ],
 };
 
@@ -28,7 +42,7 @@ export default function HomeScreen({ navigation }) {
     ]);
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
 
       {/* Cabeçalho */}
       <View style={styles.header}>
@@ -91,14 +105,14 @@ export default function HomeScreen({ navigation }) {
         </Text>
       </TouchableOpacity>
 
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
 
   container: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 35,
     backgroundColor: '#FFFFFF',

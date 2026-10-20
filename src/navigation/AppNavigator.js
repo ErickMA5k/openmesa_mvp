@@ -7,6 +7,7 @@ import AdicionarFichaScreen from '../screens/AdicionarFichaScreen';
 import HistoricoScreen from '../screens/HistoricoScreen';
 import CalendarioScreen from '../screens/CalendarioScreen';
 import QRCodeScreen from '../screens/QRCodeScreen';
+import EmBreveScreen from '../screens/EmBreveScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -22,6 +23,11 @@ export default function AppNavigator() {
           <Stack.Screen name="Historico" component={HistoricoScreen} />
           <Stack.Screen name="Calendario" component={CalendarioScreen} options={{ title: 'Calendário' }} />
           <Stack.Screen name="QRCode" component={QRCodeScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="MarmitasConvenio" component={EmBreveScreen} options={{ title: 'Marmitas de convênio' }} />
+          <Stack.Screen name="Relatorios" component={EmBreveScreen} options={{ title: 'Relatórios' }} />
+          <Stack.Screen name="PagamentosConvenios" component={EmBreveScreen} options={{ title: 'Pagamentos de convênios' }} />
+          <Stack.Screen name="FazerPedido" component={EmBreveScreen} options={{ title: 'Fazer pedido' }} />
+          <Stack.Screen name="HistoricoPedidos" component={EmBreveScreen} options={{ title: 'Histórico de pedidos' }} />
         </>
       ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
