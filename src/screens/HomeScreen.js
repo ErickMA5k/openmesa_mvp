@@ -8,6 +8,7 @@ const botoesPorPerfil = {
     { titulo: 'Adicionar Ficha', descricao: 'Registrar uma nova ficha', tela: 'AdicionarFicha', simbolo: '+', principal: true },
     { titulo: 'Histórico', descricao: 'Consultar fichas registradas', tela: 'Historico', simbolo: '≡' },
     { titulo: 'Calendário', descricao: 'Visualizar fichas por data', tela: 'Calendario', simbolo: '□' },
+    { titulo: 'Escanear QR Code', descricao: 'Ler o QR Code das fichas', tela: 'QRCode', simbolo: '▣' },
   ],
 };
 
