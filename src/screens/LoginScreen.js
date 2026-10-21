@@ -59,6 +59,7 @@ export default function LoginScreen() {
     entrar({
       nome: encontrado.nome,
       perfil: encontrado.perfil,
+      restaurante: encontrado.restaurante,
     });
   };
 

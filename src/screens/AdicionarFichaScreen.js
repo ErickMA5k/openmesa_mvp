@@ -8,17 +8,19 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
- 
 import PopupFichas from '../components/popupFichas';
-import { useFichas, TIPOS } from '../context/FichasContext';
- 
+import { useFichas, TIPOS, valorFicha } from '../context/FichasContext';
+import { useAuth } from '../context/AuthContext';
+import { nomeDoRestaurante } from '../data/restaurantes'; 
 
 
  
 export default function AdicionarFichaScreen({ navigation }) {
   const { adicionarFicha, carregando, erroCarregamento } = useFichas();
+    // Restaurante em que a pessoa logada trabalha (vem do cadastro dela)
+  const { usuario } = useAuth();
+  const nomeRestaurante = nomeDoRestaurante(usuario?.restaurante);
   const [tipo, setTipo] = useState('');
-  const [local, setLocal] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [valor, setValor] = useState('');
   const [erro, setErro] = useState('');
@@ -26,8 +28,9 @@ export default function AdicionarFichaScreen({ navigation }) {
   const [salvando, setSalvando] = useState(false);
  
   const quantidadeNumero = Number(quantidade) || 0;
-  const valorNumero = Number(String(valor).replace(',', '.')) || 0;
-  const total = quantidadeNumero * valorNumero;
+    // O valor da ficha é fixo (vem do contexto); aqui só preparamos o texto "2,00" para mostrar
+  const valorTexto = valorFicha.toFixed(2).replace('.', ',');
+  const total = quantidadeNumero * valorFicha;
  
   // A mensagem de sucesso some sozinha depois de alguns segundos
   useEffect(() => {
@@ -57,18 +60,8 @@ export default function AdicionarFichaScreen({ navigation }) {
       return;
     }
  
-    if (!local.trim()) {
-      setErro('Informe o local.');
-      return;
-    }
- 
     if (!Number.isInteger(quantidadeNumero) || quantidadeNumero <= 0) {
       setErro('A quantidade deve ser um número inteiro maior que zero.');
-      return;
-    }
- 
-    if (valorNumero <= 0) {
-      setErro('O valor deve ser maior que zero.');
       return;
     }
  
@@ -78,16 +71,13 @@ export default function AdicionarFichaScreen({ navigation }) {
     try {
       await adicionarFicha({
         tipo,
-        local,
+        local: nomeRestaurante, // nome do restaurante do cadastro, em vez de texto digitado
         quantidade: quantidadeNumero,
-        valor: valorNumero,
       });
  
       // Limpa o formulário para o próximo cadastro e avisa que deu certo
       setTipo('');
-      setLocal('');
       setQuantidade('');
-      setValor('');
       setSucesso(true);
     } catch (error) {
       console.log('Erro ao salvar ficha:', error);
@@ -153,11 +143,11 @@ export default function AdicionarFichaScreen({ navigation }) {
  
       <Text style={styles.label}>Local</Text>
  
+      {/* Local fixo: mostra o restaurante do cadastro e não pode ser editado */}
       <TextInput
-        style={styles.input}
-        placeholder="Ex.: Restaurante Popular"
-        value={local}
-        onChangeText={aoDigitar(setLocal)}
+        style={[styles.input, { backgroundColor: '#F5F5F5' }]}
+        value={nomeRestaurante}
+        editable={false}
       />
  
       <Text style={styles.label}>Quantidade</Text>
@@ -172,12 +162,11 @@ export default function AdicionarFichaScreen({ navigation }) {
  
       <Text style={styles.label}>Valor por refeição</Text>
  
+       {/* Valor fixo: mostra o valor da ficha e não pode ser editado */}
       <TextInput
-        style={styles.input}
-        placeholder="Ex.: 2,00"
-        keyboardType="decimal-pad"
-        value={valor}
-        onChangeText={aoDigitar(setValor)}
+        style={[styles.input, { backgroundColor: '#F5F5F5' }]}
+        value={valorTexto}
+        editable={false}
       />
  
       <View style={styles.totalContainer}>

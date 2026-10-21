@@ -2,6 +2,7 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, ScrollView } fr
 import { useAuth } from '../context/AuthContext';
 import { useFichas } from '../context/FichasContext';
 import { espacos } from '../theme';
+import { nomeDoRestaurante } from '../data/restaurantes';
 
 //Botões que o Caixa vê (o Fiscal também usa todos eles)
 const botoesCaixa = [
@@ -61,6 +62,14 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.nome}>
             {usuario?.nome || 'Usuário'}
           </Text>
+
+         {/* Restaurante do usuário (só aparece para Caixa e Fiscal) */}
+          {usuario?.restaurante && (
+            <Text style={styles.restaurante}>
+              {nomeDoRestaurante(usuario.restaurante)}
+            </Text>
+          )}
+
         </View>
 
       </View>
@@ -147,6 +156,11 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontWeight: '700',
     color: '#172A55',
+  },
+
+  restaurante: {
+    fontSize: 13,
+    color: '#777777',
   },
 
   subtitulo: {

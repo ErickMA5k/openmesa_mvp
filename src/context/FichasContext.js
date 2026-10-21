@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from './AuthContext';
 
 // Contexto para gerenciar fichas
 const FichasContext = createContext(null);
@@ -10,7 +11,7 @@ const STORAGE_KEY = '@openmesa:fichas';
 // Valor de 2 reais para cada ficha.
 // IMPORTANTE: cada ficha guarda o valor da época em que foi registrada (campo "valor").
 // Alterar esta constante só afeta as fichas NOVAS;
-const valorFicha = 2;
+export const valorFicha = 2;
 
 // Fuso usado em todas as datas. Fixar o fuso evita que o dia "vire" errado
 // (por exemplo, depois das 21h) ou que dependa da configuração do aparelho.
@@ -80,6 +81,7 @@ function normalizarFichas(lista) {
         valor,
         total: arredondar(Number(ficha.total ?? quantidade * valor)),
         data: formatarData(ficha.data),
+        hora: ficha.hora ?? '', // fichas registradas antes desta mudança ficam sem hora
       };
     });
 }
@@ -93,7 +95,17 @@ function enfileirar(filaRef, operacao) {
   return resultado;
 }
 
+// Hora de agora no horário de Brasília, no formato HH:MM (ex.: 14:35)
+function horaAgora() {
+  return new Date().toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: FUSO, // mesmo fuso das datas, para não depender do aparelho
+  });
+}
+
 export function FichasProvider({ children }) {
+  const { usuario } = useAuth();
   const [fichas, setFichas] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erroCarregamento, setErroCarregamento] = useState('');
@@ -141,6 +153,13 @@ export function FichasProvider({ children }) {
     });
   }
 
+  // Fichas que o usuário logado pode ver: só as do restaurante dele.
+  // O administrador (a ser criado) verá as de todos os restaurantes
+  const fichasVisiveis =
+    usuario?.perfil === 'administrador'
+      ? fichas
+      : fichas.filter((f) => usuario?.restaurante && f.restaurante === usuario.restaurante);
+
   // Função para gerar o ID, validar os dados e registrar a ficha na lista.
   // Aceita dois formatos de chamada:
   //   adicionarFicha(tipo, quantidade)                 -> cadastro rápido (popup)
@@ -169,6 +188,10 @@ export function FichasProvider({ children }) {
       throw new Error('Informe um valor válido.');
     }
 
+    if (!usuario?.restaurante) {
+      throw new Error('Seu usuário não está vinculado a um restaurante.');
+    }
+
     // O ID mistura o horário e um contador, então continua único mesmo depois de
     // reiniciar o app. A data é sempre a de hoje (não pode ser informada pela tela).
     contadorId.current += 1;
@@ -180,6 +203,8 @@ export function FichasProvider({ children }) {
       valor,
       total: arredondar(quantidade * valor),
       data: dataHoje(),
+      hora: horaAgora(), // hora em que a venda foi registrada
+      restaurante: usuario.restaurante, // a ficha conta para o restaurante de quem a registrou
     };
 
     await alterarLista((lista) => [...lista, novaFicha]);
@@ -194,13 +219,13 @@ export function FichasProvider({ children }) {
   // Fichas de um dia. Sem argumento, usa hoje; aceita Date, 'dd/mm/aaaa' ou 'aaaa-mm-dd'
   function fichasDoDia(data = new Date()) {
     const dataFormatada = formatarData(data);
-    return fichas.filter((ficha) => ficha.data === dataFormatada);
+    return fichasVisiveis.filter((ficha) => ficha.data === dataFormatada);
   }
 
 
   // Garante que os elementos das listas somados sejam adicionados ao histórico
   function fichasConsideradas(data) {
-    return data === undefined || data === null ? fichas : fichasDoDia(data);
+    return data === undefined || data === null ? fichasVisiveis : fichasDoDia(data);
   }
 
   // Quantidade de fichas registradas, soma o campo registrado "quantidade" da lista, de cada pedido.
@@ -218,7 +243,7 @@ export function FichasProvider({ children }) {
 
   // Disponibiliza apenas estas funções e dados para as telas. A lista só pode ser
   const valorContexto = {
-    fichas,
+    fichas: fichasVisiveis,
     carregando,
     erroCarregamento,
     adicionarFicha,

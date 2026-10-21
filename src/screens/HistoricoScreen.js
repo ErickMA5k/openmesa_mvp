@@ -7,8 +7,8 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
-
 import { useFichas } from '../context/FichasContext';
+import { nomeDoRestaurante } from '../data/restaurantes';
 
 function formatarValor(valor) {
   return Number(valor || 0)
@@ -131,10 +131,16 @@ export default function HistoricoScreen({ navigation, route }) {
           <View style={styles.cabecalhoCard}>
             <Text style={styles.tipo}>{ficha.tipo}</Text>
 
-            <Text style={styles.data}>{ficha.data}</Text>
+            {/* Data e, quando existir, a hora da venda (ex.: 21/10/2026 às 14:35) */}
+            <Text style={styles.data}>
+              {ficha.hora ? `${ficha.data} às ${ficha.hora}` : ficha.data}
+            </Text>
           </View>
 
-          <Text style={styles.local}>{ficha.local}</Text>
+          {/* Nome do restaurante da venda; se a ficha não tiver restaurante, mostra o local antigo */}
+          <Text style={styles.local}>
+            {nomeDoRestaurante(ficha.restaurante) || ficha.local}
+          </Text>
 
           <View style={styles.informacoes}>
             <View>
