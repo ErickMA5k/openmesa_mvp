@@ -1,4 +1,4 @@
-﻿
+
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
@@ -39,7 +39,7 @@ async function salvar() {
     const lista = dados ? JSON.parse(dados) : [];
 
     if (!Array.isArray(lista)) {
-      throw new Error('Os dados salvos n├úo est├úo em uma lista v├ílida.');
+      throw new Error('Os dados salvos não estão em uma lista válida.');
     }
 
     lista.push({
@@ -54,15 +54,15 @@ async function salvar() {
 
     await AsyncStorage.setItem(CHAVE, JSON.stringify(lista));
 
-    setSucesso('Requisi├º├úo registrada com sucesso!');
+    setSucesso('Requisição registrada com sucesso!');
     setEmpresa(usuario?.perfil === 'empresa' ? usuario.nome : '');
     setQuantidade('');
     setObservacao('');
   } catch (erro) {
-    console.error('Erro ao salvar requisi├º├úo:', erro);
+    console.error('Erro ao salvar requisição:', erro);
     Alert.alert(
       'Erro',
-      `N├úo foi poss├¡vel salvar: ${erro.message || erro}`
+      `Não foi possível salvar: ${erro.message || erro}`
     );
   } finally {
     setSalvando(false);
@@ -90,10 +90,10 @@ async function salvar() {
         onChangeText={setQuantidade}
       />
 
-      <Text style={styles.label}>Observa├º├úo (opcional)</Text>
+      <Text style={styles.label}>Observação (opcional)</Text>
       <TextInput
         style={[styles.input, styles.observacao]}
-        placeholder="Informa├º├Áes adicionais"
+        placeholder="Informações adicionais"
         value={observacao}
         onChangeText={setObservacao}
         multiline
@@ -111,7 +111,7 @@ async function salvar() {
         disabled={salvando}
       >
         <Text style={styles.textoBotao}>
-          {salvando ? 'Salvando...' : 'Registrar requisi├º├úo'}
+          {salvando ? 'Salvando...' : 'Registrar requisições'}
         </Text>
       </TouchableOpacity>
 
