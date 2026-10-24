@@ -8,6 +8,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { useFichas } from '../context/FichasContext';
+import { useAuth } from '../context/AuthContext';
+import { podeFazer } from '../data/permissoes';
 import { nomeDoRestaurante } from '../data/restaurantes';
 
 function formatarValor(valor) {
@@ -19,6 +21,10 @@ function formatarValor(valor) {
 export default function HistoricoScreen({ navigation, route }) {
   // As fichas vêm do Context (que já lê, valida e grava no armazenamento)
   const { fichas, carregando, erroCarregamento, removerFicha, fichasDoDia, totalFichas,receitaTotal } = useFichas();
+
+  // Só alguns perfis (ver data/permissoes.js) enxergam o botão de excluir
+  const { usuario } = useAuth();
+  const podeExcluir = podeFazer(usuario, 'excluirFicha');
 
   // Id da ficha que está aguardando confirmação de exclusão (null = nenhuma)
   const [idParaConfirmar, setIdParaConfirmar] = useState(null);
@@ -162,7 +168,7 @@ export default function HistoricoScreen({ navigation, route }) {
             </View>
           </View>
 
-          {idParaConfirmar === ficha.id ? (
+          {podeExcluir && (idParaConfirmar === ficha.id ? (
             <View style={styles.confirmacao}>
               <Text style={styles.textoConfirmacao}>Excluir esta ficha?</Text>
 
@@ -189,7 +195,7 @@ export default function HistoricoScreen({ navigation, route }) {
             >
               <Text style={styles.textoExcluir}>Excluir</Text>
             </TouchableOpacity>
-          )}
+          ))}
         </View>
       ))}
     </ScrollView>
