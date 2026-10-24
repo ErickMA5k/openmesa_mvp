@@ -5,11 +5,14 @@ import {
   StyleSheet, Alert, ScrollView
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../context/AuthContext';
+
 
 const CHAVE = '@openmesa:convenios';
 
 export default function RequisitarConvenioScreen({ navigation }) {
-  const [empresa, setEmpresa] = useState('');
+  const { usuario } = useAuth();
+  const [empresa, setEmpresa] = useState(usuario?.perfil === 'empresa' ? usuario.nome : '');
   const [quantidade, setQuantidade] = useState('');
   const [observacao, setObservacao] = useState('');
   const [salvando, setSalvando] = useState(false);
@@ -20,12 +23,12 @@ async function salvar() {
   const qtd = Number(quantidade);
 
   if (!empresa.trim()) {
-    Alert.alert('Aten├º├úo', 'Informe a empresa ou conv├¬nio.');
+    Alert.alert('Atenção', 'Informe a empresa.');
     return;
   }
 
   if (!Number.isInteger(qtd) || qtd <= 0) {
-    Alert.alert('Aten├º├úo', 'Informe uma quantidade inteira maior que zero.');
+    Alert.alert('Atenção', 'Informe uma quantidade inteira maior que zero.');
     return;
   }
 
@@ -52,7 +55,7 @@ async function salvar() {
     await AsyncStorage.setItem(CHAVE, JSON.stringify(lista));
 
     setSucesso('Requisi├º├úo registrada com sucesso!');
-    setEmpresa('');
+    setEmpresa(usuario?.perfil === 'empresa' ? usuario.nome : '');
     setQuantidade('');
     setObservacao('');
   } catch (erro) {
@@ -67,13 +70,14 @@ async function salvar() {
 }
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.titulo}>Requisitar Conv├¬nio</Text>
+      <Text style={styles.titulo}>Requisitar Marmitas para Empresa</Text>
 
-      <Text style={styles.label}>Empresa ou conv├¬nio</Text>
+      <Text style={styles.label}>Empresa</Text>
       <TextInput
         style={styles.input}
         placeholder="Nome da empresa"
         value={empresa}
+        editable={usuario?.perfil !== 'empresa'}
         onChangeText={setEmpresa}
       />
 

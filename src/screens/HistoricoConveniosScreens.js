@@ -34,7 +34,7 @@ export default function HistoricoConveniosScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.titulo}>Hist├│rico de Conv├¬nios</Text>
+      <Text style={styles.titulo}>Histórico de Empresas</Text>
 
       <FlatList
         data={requisicoes}
