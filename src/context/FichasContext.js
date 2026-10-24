@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthContext';
+import { podeFazer } from '../data/permissoes';
 
 // Contexto para gerenciar fichas
 const FichasContext = createContext(null);
@@ -212,7 +213,12 @@ export function FichasProvider({ children }) {
   }
 
   // Remove uma única ficha, pelo id (usada na tela de Histórico)
+  // Só perfis com a permissão "excluirFicha" (ver data/permissoes.js) podem excluir
   async function removerFicha(id) {
+    if (!podeFazer(usuario, 'excluirFicha')) {
+      throw new Error('Seu perfil não tem permissão para excluir fichas.');
+    }
+
     await alterarLista((lista) => lista.filter((ficha) => ficha.id !== String(id)));
   }
 
