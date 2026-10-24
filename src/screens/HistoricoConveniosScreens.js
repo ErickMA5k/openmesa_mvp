@@ -1,4 +1,4 @@
-﻿
+
 import { useCallback, useState } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -40,7 +40,7 @@ export default function HistoricoConveniosScreen() {
         data={requisicoes}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={
-          <Text style={styles.vazio}>Nenhuma requisi├º├úo registrada.</Text>
+          <Text style={styles.vazio}>Nenhuma requisição registrada.</Text>
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
@@ -48,7 +48,7 @@ export default function HistoricoConveniosScreen() {
             <Text>Quantidade: {item.quantidade} marmitas</Text>
             <Text>Data: {item.data}</Text>
             {item.observacao ? (
-              <Text>Observa├º├úo: {item.observacao}</Text>
+              <Text>Observação: {item.observacao}</Text>
             ) : null}
           </View>
         )}
