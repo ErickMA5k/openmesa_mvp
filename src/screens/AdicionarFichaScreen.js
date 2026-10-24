@@ -11,6 +11,7 @@ import {
 import PopupFichas from '../components/popupFichas';
 import { useFichas, TIPOS, valorFicha } from '../context/FichasContext';
 import { useAuth } from '../context/AuthContext';
+import { podeFazer } from '../data/permissoes';
 import { nomeDoRestaurante } from '../data/restaurantes'; 
 
 
@@ -20,6 +21,8 @@ export default function AdicionarFichaScreen({ navigation }) {
     // Restaurante em que a pessoa logada trabalha (vem do cadastro dela)
   const { usuario } = useAuth();
   const nomeRestaurante = nomeDoRestaurante(usuario?.restaurante);
+  // Só alguns perfis (ver data/permissoes.js) podem usar o cadastro detalhado
+  const podeCadastroDetalhado = podeFazer(usuario, 'cadastroDetalhado');
   const [tipo, setTipo] = useState('');
   const [quantidade, setQuantidade] = useState('');
   const [valor, setValor] = useState('');
@@ -54,6 +57,12 @@ export default function AdicionarFichaScreen({ navigation }) {
  
   const salvarFicha = async () => {
     setSucesso(false);
+
+    //Essa opção normalmente não aparece para o usuário caixa, contudo, criei essa função para proteger o sistema caso alguma futura alteração ou falha venha a fazer o botão a aparecer
+    if (!podeCadastroDetalhado) {
+      setErro('Seu perfil não tem permissão para o cadastro detalhado.');
+      return;
+    }
  
     if (!tipo) {
       setErro('Selecione o tipo da ficha.');
@@ -101,6 +110,8 @@ export default function AdicionarFichaScreen({ navigation }) {
  
       <PopupFichas />
  
+      {podeCadastroDetalhado && (
+      <>
       <Text style={styles.label}>Cadastro detalhado</Text>
  
       <Text style={styles.label}>Tipo</Text>
@@ -192,6 +203,8 @@ export default function AdicionarFichaScreen({ navigation }) {
           {salvando ? 'Salvando...' : 'Salvar Ficha'}
         </Text>
       </TouchableOpacity>
+      </>
+      )}
  
       <TouchableOpacity
         style={styles.botaoCancelar}
