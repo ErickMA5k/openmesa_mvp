@@ -25,7 +25,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Historico" component={HistoricoScreen} />
           <Stack.Screen name="Calendario" component={CalendarioScreen} options={{ title: 'Calendário' }} />
           <Stack.Screen name="QRCode" component={QRCodeScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="MarmitasConvenio" component={EmBreveScreen} options={{ title: 'Marmitas de convênio' }} />
+          <Stack.Screen name="MarmitasConvenio" component={HistoricoConveniosScreen} options={{ title: 'Marmitas de convênio' }} />
           <Stack.Screen name="Relatorios" component={EmBreveScreen} options={{ title: 'Relatórios' }} />
           <Stack.Screen name="PagamentosConvenios" component={EmBreveScreen} options={{ title: 'Pagamentos de convênios' }} />
           <Stack.Screen name="FazerPedido" component={RequisitarConvenioScreen} options={{ title: 'Fazer pedido' }} />
