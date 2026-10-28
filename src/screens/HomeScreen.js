@@ -12,18 +12,29 @@ const botoesCaixa = [
   { titulo: 'Escanear QR Code', descricao: 'Ler o QR Code das fichas', tela: 'QRCode', simbolo: '▣' },
 ];
 
+//Botões do Fiscal: tudo do Caixa + os convênios já aprovados pelo admin para o restaurante dele
+const botoesFiscal = [
+  ...botoesCaixa, // copia todos os botões do Caixa para dentro da lista do Fiscal
+  { titulo: 'Marmitas de convênio', descricao: 'Pedidos de convênio aprovados', tela: 'MarmitasConvenio', simbolo: '≡' },
+];
+
+//Telas que o admin NÃO usa:
+//- AdicionarFicha e QRCode: a ficha é registrada para o restaurante de quem a lança, e o admin não tem restaurante
+//- MarmitasConvenio: o admin já vê e decide os convênios na tela de Aprovação
+const telasForaDoAdmin = ['AdicionarFicha', 'QRCode', 'MarmitasConvenio'];
+
 //Lista de botões de cada perfil. A chave é o mesmo "perfil" do usuarios.js
 const botoesPorPerfil = {
   caixa: botoesCaixa,
-  fiscal: [
-    ...botoesCaixa, // copia todos os botões do Caixa para dentro da lista do Fiscal
-    { titulo: 'Marmitas de convênio', descricao: 'Pedidos feitos pelas empresas', tela: 'MarmitasConvenio', simbolo: '≡' },
-    { titulo: 'Relatórios', descricao: 'Planilhas de vendas', tela: 'Relatorios', simbolo: '↓' },
-    { titulo: 'Pagamentos de convênios', descricao: 'Pedidos finalizados e pagamentos', tela: 'PagamentosConvenios', simbolo: '$' },
-  ],
+  fiscal: botoesFiscal,
   empresa: [
     { titulo: 'Fazer pedido', descricao: 'Solicitar marmitas ao restaurante', tela: 'FazerPedido', simbolo: '+', principal: true },
     { titulo: 'Histórico de pedidos', descricao: 'Consultar pedidos feitos', tela: 'HistoricoPedidos', simbolo: '≡' },
+  ],
+  admin: [
+    ...botoesFiscal.filter((b) => !telasForaDoAdmin.includes(b.tela)),
+    { titulo: 'Relatórios', descricao: 'Planilhas de vendas', tela: 'Relatorios', simbolo: '↓' },
+    { titulo: 'Aprovação de convênios', descricao: 'Aprovar ou recusar pedidos das empresas', tela: 'AprovacaoConvenios', simbolo: '✓' },
   ],
 };
 

@@ -6,4 +6,6 @@ export const usuarios = [
   { usuario: 'fiscal2', senha: '1234', nome: 'Fiscal 2', perfil: 'fiscal', restaurante: 'morumbi' },
     /*Perfil Empresa-Convênio: só faz pedidos de marmitas e consulta o histórico deles*/
   { usuario: 'empresa1', senha: '1234', nome: 'Empresa 1', perfil: 'empresa' },
+  /*Perfil do administrador, contém todas as funções do aplicativo e pode criar ou cancelar usuários*/
+  { usuario: 'admin1', senha:'1234',nome: 'Administrador', perfil: 'admin'},
 ];

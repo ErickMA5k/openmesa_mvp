@@ -155,9 +155,9 @@ export function FichasProvider({ children }) {
   }
 
   // Fichas que o usuário logado pode ver: só as do restaurante dele.
-  // O administrador (a ser criado) verá as de todos os restaurantes
+  // O administrador (perfil 'admin') vê as de todos os restaurantes
   const fichasVisiveis =
-    usuario?.perfil === 'administrador'
+    usuario?.perfil === 'admin'
       ? fichas
       : fichas.filter((f) => usuario?.restaurante && f.restaurante === usuario.restaurante);
 
