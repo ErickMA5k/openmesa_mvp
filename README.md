@@ -65,6 +65,7 @@ Em desenvolvimento - Encontra-se no estágio da Sprint 01
 | :--- | :--- | :--- | :--- |
 | caixa1 | 1234 | Caixa1 | caixa |
 | caixa2 | 1234 | Caixa2 | caixa |
+| empresa1 | 1234 | Empresa 1 | empresa-convênio |
 
 Dados apenas para teste, guardados em `src/data/usuarios.js`. Serão substituídos pelo cadastro real quando o banco de dados for incluído.
 
