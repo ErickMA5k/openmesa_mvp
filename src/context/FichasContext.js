@@ -189,6 +189,12 @@ export function FichasProvider({ children }) {
       throw new Error('Informe um valor válido.');
     }
 
+    // Quem pode registrar: o Caixa registra fichas comuns; o Fiscal só registra fichas de convênio
+    const acaoNecessaria = tipo === TIPOS.CONVENIO ? 'incluirConvenio' : 'adicionarFicha';
+    if (!podeFazer(usuario, acaoNecessaria)) {
+      throw new Error('Seu perfil não tem permissão para registrar este tipo de ficha.');
+    }
+
     if (!usuario?.restaurante) {
       throw new Error('Seu usuário não está vinculado a um restaurante.');
     }

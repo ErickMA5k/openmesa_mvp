@@ -12,9 +12,13 @@ const botoesCaixa = [
   { titulo: 'Escanear QR Code', descricao: 'Ler o QR Code das fichas', tela: 'QRCode', simbolo: '▣' },
 ];
 
-//Botões do Fiscal: tudo do Caixa + os convênios já aprovados pelo admin para o restaurante dele
+//Telas de registro de fichas: só o Caixa usa (o Fiscal usa só os de consulta)
+const telasSoDoCaixa = ['AdicionarFicha', 'QRCode'];
+
+//Botões do Fiscal: os de consulta do Caixa + os convênios já aprovados pelo admin para o restaurante dele
 const botoesFiscal = [
-  ...botoesCaixa, // copia todos os botões do Caixa para dentro da lista do Fiscal
+  // copia os botões do Caixa, menos os de registrar ficha
+  ...botoesCaixa.filter((b) => !telasSoDoCaixa.includes(b.tela)),
   { titulo: 'Marmitas de convênio', descricao: 'Pedidos de convênio aprovados', tela: 'MarmitasConvenio', simbolo: '≡' },
 ];
 

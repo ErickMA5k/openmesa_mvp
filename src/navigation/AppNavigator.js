@@ -22,10 +22,15 @@ export default function AppNavigator() {
       {usuario ? (
         <>
           <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="AdicionarFicha" component={AdicionarFichaScreen} options={{ title: 'Adicionar Ficha' }} />
           <Stack.Screen name="Historico" component={HistoricoScreen} />
           <Stack.Screen name="Calendario" component={CalendarioScreen} options={{ title: 'Calendário' }} />
-          <Stack.Screen name="QRCode" component={QRCodeScreen} options={{ headerShown: false }} />
+          {/* Só o Caixa registra fichas: para os outros perfis estas rotas nem existem */}
+          {usuario.perfil === 'caixa' && (
+            <>
+              <Stack.Screen name="AdicionarFicha" component={AdicionarFichaScreen} options={{ title: 'Adicionar Ficha' }} />
+              <Stack.Screen name="QRCode" component={QRCodeScreen} options={{ headerShown: false }} />
+            </>
+          )}
           {/* Marmitas de convênio: só o fiscal usa (o admin decide pela tela de Aprovação) */}
           {usuario.perfil === 'fiscal' && (
             <Stack.Screen name="MarmitasConvenio" component={HistoricoConveniosScreen} options={{ title: 'Marmitas de convênio' }} />
