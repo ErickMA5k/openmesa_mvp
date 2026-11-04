@@ -177,6 +177,10 @@ export function FichasProvider({ children }) {
     const quantidade = Number(dados?.quantidade);
     const valor = Number(dados?.valor ?? valorFicha);
 
+        // Só usados nas fichas de convênio: a empresa que recebe (destino) e o pedido de origem
+    const destino = String(dados?.destino ?? '').trim();
+    const pedidoId = dados?.pedidoId ? String(dados.pedidoId) : '';
+
     if (!tipo) {
       throw new Error('Informe o tipo da ficha.');
     }
@@ -199,6 +203,11 @@ export function FichasProvider({ children }) {
       throw new Error('Seu usuário não está vinculado a um restaurante.');
     }
 
+        // Marmita de convênio exige destino e o pedido de origem: sem eles o registro é recusado
+    if (tipo === TIPOS.CONVENIO && (!destino || !pedidoId)) {
+      throw new Error('A marmita de convênio exige um destino e o pedido de origem.');
+    }
+
     // O ID mistura o horário e um contador, então continua único mesmo depois de
     // reiniciar o app. A data é sempre a de hoje (não pode ser informada pela tela).
     contadorId.current += 1;
@@ -212,9 +221,17 @@ export function FichasProvider({ children }) {
       data: dataHoje(),
       hora: horaAgora(), // hora em que a venda foi registrada
       restaurante: usuario.restaurante, // a ficha conta para o restaurante de quem a registrou
+            // Só as fichas de convênio guardam destino e pedido de origem
+      ...(tipo === TIPOS.CONVENIO ? { destino, pedidoId } : {}),
     };
 
-    await alterarLista((lista) => [...lista, novaFicha]);
+        await alterarLista((lista) => {
+      // Impede incluir o mesmo pedido duas vezes (por exemplo, com dois toques seguidos)
+      if (pedidoId && lista.some((f) => f.pedidoId === pedidoId)) {
+        throw new Error('Este pedido já foi incluído na contagem.');
+      }
+      return [...lista, novaFicha];
+    });
     return novaFicha;
   }
 

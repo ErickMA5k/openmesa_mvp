@@ -143,9 +143,10 @@ export default function HistoricoScreen({ navigation, route }) {
             </Text>
           </View>
 
-          {/* Nome do restaurante da venda; se a ficha não tiver restaurante, mostra o local antigo */}
+          {/* Restaurante da venda; nas marmitas de convênio mostra também o destino */}
           <Text style={styles.local}>
             {nomeDoRestaurante(ficha.restaurante) || ficha.local}
+            {ficha.destino ? `\nDestino: ${ficha.destino}` : ''}
           </Text>
 
           <View style={styles.informacoes}>

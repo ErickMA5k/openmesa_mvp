@@ -11,6 +11,7 @@ import EmBreveScreen from '../screens/EmBreveScreen';
 import RequisitarConvenioScreen from '../screens/RequisitarConvenioScreen';
 import HistoricoConveniosScreen from '../screens/HistoricoConveniosScreens';
 import AprovacaoConveniosScreen from '../screens/AprovacaoConveniosScreen';
+import MarmitasConvenioScreen from '../screens/MarmitasConvenioScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -33,7 +34,7 @@ export default function AppNavigator() {
           )}
           {/* Marmitas de convênio: só o fiscal usa (o admin decide pela tela de Aprovação) */}
           {usuario.perfil === 'fiscal' && (
-            <Stack.Screen name="MarmitasConvenio" component={HistoricoConveniosScreen} options={{ title: 'Marmitas de convênio' }} />
+            <Stack.Screen name="MarmitasConvenio" component={MarmitasConvenioScreen} options={{ title: 'Marmitas de convênio' }} />
           )}
           {/* Telas exclusivas do admin: para os demais perfis estas rotas nem existem */}
           {usuario.perfil === 'admin' && (
