@@ -11,7 +11,7 @@ export const permissoes = {
     adicionarFicha: false, // o Fiscal não registra fichas comuns (nem manual, nem por QR Code)
     incluirConvenio: true, // só registra fichas ao incluir marmitas de convênio aprovadas
     cadastroDetalhado: false,
-    excluirFicha: true,
+    excluirFicha: false,
     aprovarConvenio: false,
   },
   empresa: {
