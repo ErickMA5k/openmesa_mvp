@@ -1,8 +1,12 @@
 import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useFichas } from '../context/FichasContext';
-import { espacos } from '../theme';
 import { nomeDoRestaurante } from '../data/restaurantes';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { podeFazer } from '../data/permissoes';
+import { STATUS, statusDoPedido, lerConvenios } from '../data/convenios';
+import { cores, espacos } from '../theme'; // antes só importava "espacos"
 
 //Botões que o Caixa vê (o Fiscal também usa todos eles)
 const botoesCaixa = [
@@ -45,11 +49,54 @@ const botoesPorPerfil = {
 export default function HomeScreen({ navigation }) {
   const { usuario, sair } = useAuth();
 
-  const {
-    fichas,
-    totalGeral,
-    receitaTotal,
-  } = useFichas();
+  // Precisa vir ANTES do useFocusEffect, que usa "fichas" e "carregando" na lista de dependências
+  const { fichas, carregando } = useFichas();
+
+  // Números das notificações (null = ainda não carregou)
+  const [pendentes, setPendentes] = useState(null);
+  const [paraIncluir, setParaIncluir] = useState(null);
+
+  const notificacoes = {
+    AprovacaoConvenios: pendentes,
+    MarmitasConvenio: paraIncluir,
+  };
+
+  // Recarrega as contagens sempre que a Home volta a ficar visível
+  useFocusEffect(
+    useCallback(() => {
+      const ehAdmin = podeFazer(usuario, 'aprovarConvenio');
+      const ehFiscal = podeFazer(usuario, 'incluirConvenio');
+      if (!ehAdmin && !ehFiscal) return; // os outros perfis não têm notificações
+
+      let ativo = true; // evita atualizar a tela se ela já foi fechada
+
+      lerConvenios()
+        .then((lista) => {
+          if (!ativo) return;
+
+          if (ehAdmin) {
+            setPendentes(lista.filter((p) => statusDoPedido(p) === STATUS.PENDENTE).length);
+          }
+
+          // O Fiscal espera as fichas carregarem, para saber quais pedidos já foram incluídos
+          if (ehFiscal && !carregando) {
+            setParaIncluir(
+              lista.filter(
+                (p) =>
+                  p.restaurante === usuario.restaurante &&
+                  statusDoPedido(p) === STATUS.APROVADO &&
+                  !fichas.some((f) => f.pedidoId === p.id) // ainda sem ficha de convênio
+              ).length
+            );
+          }
+        })
+        .catch(() => {}); // se a leitura falhar, o número não aparece (melhor do que mostrar 0 errado)
+
+      return () => {
+        ativo = false;
+      };
+    }, [usuario, fichas, carregando])
+  );
 
     const confirmarSaida = () =>
     Alert.alert('Sair', 'Deseja realmente sair da conta?', [
@@ -115,6 +162,14 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.cardTitulo}>{b.titulo}</Text>
               <Text style={styles.cardDescricao}>{b.descricao}</Text>
             </View>
+
+            {/* Notificação em vermelho: aparece nos botões que têm número (inclusive o 0) */}
+            {notificacoes[b.tela] != null && (
+              <View style={styles.selo}>
+                <Text style={styles.textoSelo}>{notificacoes[b.tela]}</Text>
+              </View>
+            )}
+
           </TouchableOpacity>
         ))}
       </View>
@@ -279,4 +334,22 @@ const styles = StyleSheet.create({
     color: '#B84A4A',
   },
 
+    /* Notificação (círculo vermelho com o número) */
+
+  selo: {
+    marginLeft: 'auto', // empurra o círculo para o canto direito do card
+    minWidth: 28,
+    height: 28,
+    borderRadius: 14,
+    paddingHorizontal: 8,
+    backgroundColor: cores.perigo,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  textoSelo: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
 });
