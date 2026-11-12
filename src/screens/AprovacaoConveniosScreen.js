@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
+import { useFichas, TIPOS } from '../context/FichasContext';
 import { podeFazer } from '../data/permissoes';
 import { nomeDoRestaurante } from '../data/restaurantes';
 import {
@@ -27,6 +28,7 @@ const ACOES = {
 
 export default function AprovacaoConveniosScreen() {
   const { usuario } = useAuth();
+  const { adicionarFicha, removerFichaPorPedidoId, fichas, carregando } = useFichas();
   const [pedidos, setPedidos] = useState([]);
   const [filtro, setFiltro] = useState(STATUS.PENDENTE);
   // Pedido aguardando confirmação do clique: { id, acao } ou null
@@ -59,6 +61,31 @@ export default function AprovacaoConveniosScreen() {
     }, [])
   );
 
+  // Sincroniza convênios aprovados que ainda não possuam ficha registrada no histórico
+  useFocusEffect(
+    useCallback(() => {
+      if (carregando) return;
+      lerConvenios().then((lista) => {
+        lista.forEach(async (p) => {
+          if (statusDoPedido(p) === STATUS.APROVADO && !fichas.some((f) => f.pedidoId === p.id)) {
+            try {
+              await adicionarFicha({
+                tipo: TIPOS.CONVENIO,
+                quantidade: p.quantidade,
+                destino: p.empresa,
+                restaurante: p.restaurante,
+                local: nomeDoRestaurante(p.restaurante) || 'Não informado',
+                pedidoId: p.id,
+              });
+            } catch (err) {
+              console.log('Erro ao sincronizar ficha de convênio aprovado:', err);
+            }
+          }
+        });
+      }).catch(() => {});
+    }, [carregando, fichas, adicionarFicha])
+  );
+
   // Aprova ou recusa um pedido e grava quem decidiu e quando
   async function decidir(id, novoStatus) {
     if (processando) return;
@@ -88,6 +115,25 @@ export default function AprovacaoConveniosScreen() {
       });
 
       await salvarConvenios(atualizada);
+
+      // Ao aprovar, adiciona imediatamente a ficha correspondente ao histórico
+      const pedidoModificado = lista.find((p) => p.id === id);
+      if (pedidoModificado) {
+        if (novoStatus === STATUS.APROVADO) {
+          await adicionarFicha({
+            tipo: TIPOS.CONVENIO,
+            quantidade: pedidoModificado.quantidade,
+            destino: pedidoModificado.empresa,
+            restaurante: pedidoModificado.restaurante,
+            local: nomeDoRestaurante(pedidoModificado.restaurante) || 'Não informado',
+            pedidoId: pedidoModificado.id,
+          });
+        } else {
+          // Se recusado ou retornado a pendente, remove a ficha do histórico se já havia sido aprovada
+          await removerFichaPorPedidoId(id);
+        }
+      }
+
       setPedidos(atualizada);
       setConfirmacao(null);
     } catch (e) {

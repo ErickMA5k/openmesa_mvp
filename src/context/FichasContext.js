@@ -193,17 +193,22 @@ export function FichasProvider({ children }) {
       throw new Error('Informe um valor válido.');
     }
 
-    // Quem pode registrar: o Caixa registra fichas comuns; o Fiscal só registra fichas de convênio
-    const acaoNecessaria = tipo === TIPOS.CONVENIO ? 'incluirConvenio' : 'adicionarFicha';
-    if (!podeFazer(usuario, acaoNecessaria)) {
+    // Quem pode registrar: o Caixa registra fichas comuns; o Fiscal ou o Admin registram fichas de convênio
+    const podeRegistrar =
+      tipo === TIPOS.CONVENIO
+        ? podeFazer(usuario, 'aprovarConvenio') || podeFazer(usuario, 'incluirConvenio')
+        : podeFazer(usuario, 'adicionarFicha');
+
+    if (!podeRegistrar) {
       throw new Error('Seu perfil não tem permissão para registrar este tipo de ficha.');
     }
 
-    if (!usuario?.restaurante) {
-      throw new Error('Seu usuário não está vinculado a um restaurante.');
+    const restaurante = dados?.restaurante ?? usuario?.restaurante;
+    if (!restaurante) {
+      throw new Error('Restaurante não informado.');
     }
 
-        // Marmita de convênio exige destino e o pedido de origem: sem eles o registro é recusado
+    // Marmita de convênio exige destino e o pedido de origem: sem eles o registro é recusado
     if (tipo === TIPOS.CONVENIO && (!destino || !pedidoId)) {
       throw new Error('A marmita de convênio exige um destino e o pedido de origem.');
     }
@@ -218,21 +223,27 @@ export function FichasProvider({ children }) {
       quantidade,
       valor,
       total: arredondar(quantidade * valor),
-      data: dataHoje(),
+      data: dados?.data ? formatarData(dados.data) : dataHoje(),
       hora: horaAgora(), // hora em que a venda foi registrada
-      restaurante: usuario.restaurante, // a ficha conta para o restaurante de quem a registrou
-            // Só as fichas de convênio guardam destino e pedido de origem
+      restaurante, // a ficha conta para o restaurante informado ou de quem a registrou
+      // Só as fichas de convênio guardam destino e pedido de origem
       ...(tipo === TIPOS.CONVENIO ? { destino, pedidoId } : {}),
     };
 
-        await alterarLista((lista) => {
-      // Impede incluir o mesmo pedido duas vezes (por exemplo, com dois toques seguidos)
+    await alterarLista((lista) => {
+      // Impede incluir o mesmo pedido duas vezes
       if (pedidoId && lista.some((f) => f.pedidoId === pedidoId)) {
-        throw new Error('Este pedido já foi incluído na contagem.');
+        return lista;
       }
       return [...lista, novaFicha];
     });
     return novaFicha;
+  }
+
+  // Remove fichas atreladas a um pedido específico de convênio (ex.: quando cancelado/recusado pelo admin)
+  async function removerFichaPorPedidoId(pedidoId) {
+    if (!pedidoId) return;
+    await alterarLista((lista) => lista.filter((ficha) => ficha.pedidoId !== String(pedidoId)));
   }
 
   // Remove uma única ficha, pelo id (usada na tela de Histórico)
@@ -277,6 +288,7 @@ export function FichasProvider({ children }) {
     erroCarregamento,
     adicionarFicha,
     removerFicha,
+    removerFichaPorPedidoId,
     fichasDoDia,
     totalFichas,
     receitaTotal,

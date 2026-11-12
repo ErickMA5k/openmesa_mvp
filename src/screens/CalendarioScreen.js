@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
-import { useFichas } from '../context/FichasContext';
+import { useFichas, TIPOS } from '../context/FichasContext';
 
 import {
   View,
@@ -10,12 +10,11 @@ import {
   ScrollView,
 } from 'react-native';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { cores, espacos, fontes } from '../theme';
+import { fontes } from '../theme';
 
 export default function CalendarioScreen({ navigation }) {
-const { totalFichas } = useFichas();
-const [mesAtual, setMesAtual] = useState(new Date());
+  const { totalFichas, fichas } = useFichas();
+  const [mesAtual, setMesAtual] = useState(new Date());
   const ano = mesAtual.getFullYear();
   const mes = mesAtual.getMonth();
 
@@ -59,19 +58,29 @@ const [mesAtual, setMesAtual] = useState(new Date());
   // Usa o totalFichas como hook para inicializar a contagem de fichas
   function obterQuantidadeFichasDoDia(dia) {
     const dataFormatada = `${String(dia).padStart(2, '0')}/${String(mes + 1).padStart(2, '0')}/${ano}`;
-    // A função totalFichas(data) do FichasContext já soma automaticamente o campo .quantidade de cada lote do dia
     return totalFichas(dataFormatada);
   }
-  
-  
-  // Utiliza o obterQuantidadeFichasdoDia para determinar a quantidade total de fichas presente em um mês
-  function totalFichasDoMes() {
-    let somaMes = 0;
-    for (let dia = 1; dia <= quantidadeDias; dia++) {
-      somaMes += obterQuantidadeFichasDoDia(dia);
-    }
-    return somaMes;
-  }
+
+  // Fichas do mês e ano atualmente selecionados
+  const fichasDoMes = fichas.filter((f) => {
+    const partes = String(f.data || '').split('/');
+    if (partes.length !== 3) return false;
+    const mesFicha = Number(partes[1]) - 1;
+    const anoFicha = Number(partes[2]);
+    return mesFicha === mes && anoFicha === ano;
+  });
+
+  // Fichas do Restaurante (vendas normais, marmitas e refeição)
+  const totalBalcaoMes = fichasDoMes
+    .filter((f) => f.tipo !== TIPOS.CONVENIO)
+    .reduce((soma, f) => soma + f.quantidade, 0);
+
+  // Marmitas de Convênio (pedidos aprovados de empresas)
+  const totalConvenioMes = fichasDoMes
+    .filter((f) => f.tipo === TIPOS.CONVENIO)
+    .reduce((soma, f) => soma + f.quantidade, 0);
+
+  const totalGeralMes = totalBalcaoMes + totalConvenioMes;
 
   const dias = [];
 
@@ -230,18 +239,23 @@ const [mesAtual, setMesAtual] = useState(new Date());
       </View>
 
 
-      {/* RESUMO */}
-
+      {/* RESUMO DO MÊS COM SEPARAÇÃO */}
       <View style={styles.resumo}>
-
         <Text style={styles.resumoTitulo}>
-          Fichas neste mês
+          Total de fichas no mês: <Text style={styles.quantidadeDestaque}>{totalGeralMes}</Text>
         </Text>
 
-        <Text style={styles.quantidade}>
-          {totalFichasDoMes()}
-        </Text>
+        <View style={styles.linhaCardsResumo}>
+          <View style={styles.cardResumoItem}>
+            <Text style={styles.rotuloResumoItem}>Fichas do Restaurante</Text>
+            <Text style={styles.valorResumoBalcao}>{totalBalcaoMes}</Text>
+          </View>
 
+          <View style={[styles.cardResumoItem, styles.cardResumoConvenio]}>
+            <Text style={styles.rotuloResumoItem}>Marmitas de Convênio</Text>
+            <Text style={styles.valorResumoConvenio}>{totalConvenioMes}</Text>
+          </View>
+        </View>
       </View>
 
     </ScrollView>
@@ -420,21 +434,63 @@ const styles = StyleSheet.create({
 
   resumo: {
     marginTop: 25,
+    marginBottom: 30,
     padding: 18,
     borderRadius: 12,
     backgroundColor: '#F7F7F7',
+    borderWidth: 1,
+    borderColor: '#E5EAF0',
   },
 
   resumoTitulo: {
     fontSize: fontes.m,
-    color: '#666666',
-    marginBottom: 8,
+    color: '#555555',
+    marginBottom: 14,
+    fontWeight: '600',
   },
 
-  quantidade: {
-    fontSize: fontes.g,
+  quantidadeDestaque: {
+    color: '#172A55',
+    fontWeight: 'bold',
+  },
+
+  linhaCardsResumo: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+
+  cardResumoItem: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+  },
+
+  cardResumoConvenio: {
+    backgroundColor: '#F0F7FC',
+    borderColor: '#BAE0F7',
+  },
+
+  rotuloResumoItem: {
+    fontSize: 13,
+    color: '#666666',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+
+  valorResumoBalcao: {
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#172A55',
   },
 
+  valorResumoConvenio: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#147DBA',
+  },
 });

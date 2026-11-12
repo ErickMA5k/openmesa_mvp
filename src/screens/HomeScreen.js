@@ -1,12 +1,11 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Modal, Pressable } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { useFichas } from '../context/FichasContext';
 import { nomeDoRestaurante } from '../data/restaurantes';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { podeFazer } from '../data/permissoes';
 import { STATUS, statusDoPedido, lerConvenios } from '../data/convenios';
-import { cores, espacos } from '../theme'; // antes só importava "espacos"
+import { cores, espacos, fontes } from '../theme';
 
 //Botões que o Caixa vê (o Fiscal também usa todos eles)
 const botoesCaixa = [
@@ -47,63 +46,37 @@ const botoesPorPerfil = {
 };
 
 export default function HomeScreen({ navigation }) {
-  const { usuario, sair } = useAuth();
-
-  // Precisa vir ANTES do useFocusEffect, que usa "fichas" e "carregando" na lista de dependências
-  const { fichas, carregando } = useFichas();
+  const { sair, usuario } = useAuth();
+  const [modalSairVisivel, setModalSairVisivel] = useState(false);
 
   // Números das notificações (null = ainda não carregou)
   const [pendentes, setPendentes] = useState(null);
-  const [paraIncluir, setParaIncluir] = useState(null);
 
   const notificacoes = {
     AprovacaoConvenios: pendentes,
-    MarmitasConvenio: paraIncluir,
   };
 
   // Recarrega as contagens sempre que a Home volta a ficar visível
   useFocusEffect(
     useCallback(() => {
       const ehAdmin = podeFazer(usuario, 'aprovarConvenio');
-      const ehFiscal = podeFazer(usuario, 'incluirConvenio');
-      if (!ehAdmin && !ehFiscal) return; // os outros perfis não têm notificações
+      if (!ehAdmin) return; // os outros perfis não têm notificações
 
       let ativo = true; // evita atualizar a tela se ela já foi fechada
 
       lerConvenios()
         .then((lista) => {
           if (!ativo) return;
-
-          if (ehAdmin) {
-            setPendentes(lista.filter((p) => statusDoPedido(p) === STATUS.PENDENTE).length);
-          }
-
-          // O Fiscal espera as fichas carregarem, para saber quais pedidos já foram incluídos
-          if (ehFiscal && !carregando) {
-            setParaIncluir(
-              lista.filter(
-                (p) =>
-                  p.restaurante === usuario.restaurante &&
-                  statusDoPedido(p) === STATUS.APROVADO &&
-                  !fichas.some((f) => f.pedidoId === p.id) // ainda sem ficha de convênio
-              ).length
-            );
-          }
+          setPendentes(lista.filter((p) => statusDoPedido(p) === STATUS.PENDENTE).length);
         })
         .catch(() => {}); // se a leitura falhar, o número não aparece (melhor do que mostrar 0 errado)
 
       return () => {
         ativo = false;
       };
-    }, [usuario, fichas, carregando])
+    }, [usuario])
   );
-
-    const confirmarSaida = () =>
-    Alert.alert('Sair', 'Deseja realmente sair da conta?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Sair', style: 'destructive', onPress: sair },
-    ]);
-
+ 
   return (
     <ScrollView contentContainerStyle={styles.container}>
 
@@ -163,8 +136,9 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.cardDescricao}>{b.descricao}</Text>
             </View>
 
-            {/* Notificação em vermelho: aparece nos botões que têm número (inclusive o 0) */}
-            {notificacoes[b.tela] != null && (
+            {/* Notificação em vermelho
+            UPDATE: só aparece se o número de notificações for maior que 0 */}
+            {notificacoes[b.tela] > 0 && (
               <View style={styles.selo}>
                 <Text style={styles.textoSelo}>{notificacoes[b.tela]}</Text>
               </View>
@@ -178,11 +152,53 @@ export default function HomeScreen({ navigation }) {
       <TouchableOpacity
         style={styles.botaoSair}
         activeOpacity={0.7}
-        onPress={confirmarSaida}>
+        onPress={() => setModalSairVisivel(true)}
+      >
         <Text style={styles.textoSair}>
           Sair da conta
         </Text>
       </TouchableOpacity>
+
+      {/* Pop-up de confirmação para sair */}
+      <Modal
+        visible={modalSairVisivel}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalSairVisivel(false)}
+      >
+        <Pressable
+          style={styles.modalFundo}
+          onPress={() => setModalSairVisivel(false)}
+        >
+          <Pressable style={styles.modalCartao} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitulo}>Deseja Sair</Text>
+            <Text style={styles.modalMensagem}>
+              Tem certeza de que deseja sair da sua conta?
+            </Text>
+
+            <View style={styles.modalLinhaBotoes}>
+              <TouchableOpacity
+                style={styles.modalBotaoCancelar}
+                activeOpacity={0.7}
+                onPress={() => setModalSairVisivel(false)}
+              >
+                <Text style={styles.modalTextoCancelar}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalBotaoConfirmar}
+                activeOpacity={0.7}
+                onPress={() => {
+                  setModalSairVisivel(false);
+                  sair();
+                }}
+              >
+                <Text style={styles.modalTextoConfirmar}>Sim</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
     </ScrollView>
   );
@@ -351,5 +367,76 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
+  },
+
+  /* Pop-up Modal de Confirmação */
+  modalFundo: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: espacos.m,
+  },
+
+  modalCartao: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: cores.secundaria,
+    borderRadius: 14,
+    padding: espacos.g,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+
+  modalTitulo: {
+    fontSize: fontes.g,
+    fontWeight: 'bold',
+    color: cores.escura,
+    marginBottom: espacos.p,
+  },
+
+  modalMensagem: {
+    fontSize: fontes.p,
+    color: '#666666',
+    marginBottom: espacos.m,
+    lineHeight: 20,
+  },
+
+  modalLinhaBotoes: {
+    flexDirection: 'row',
+    gap: espacos.p,
+  },
+
+  modalBotaoCancelar: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: cores.borda,
+    backgroundColor: cores.secundaria,
+    alignItems: 'center',
+  },
+
+  modalTextoCancelar: {
+    fontSize: fontes.m,
+    fontWeight: '600',
+    color: '#555555',
+  },
+
+  modalBotaoConfirmar: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: cores.perigo,
+    alignItems: 'center',
+  },
+
+  modalTextoConfirmar: {
+    fontSize: fontes.m,
+    fontWeight: 'bold',
+    color: cores.secundaria,
   },
 });

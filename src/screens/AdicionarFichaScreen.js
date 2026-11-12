@@ -25,7 +25,6 @@ export default function AdicionarFichaScreen({ navigation }) {
   const podeCadastroDetalhado = podeFazer(usuario, 'cadastroDetalhado');
   const [tipo, setTipo] = useState('');
   const [quantidade, setQuantidade] = useState('');
-  const [valor, setValor] = useState('');
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
   const [salvando, setSalvando] = useState(false);
