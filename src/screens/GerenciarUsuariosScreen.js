@@ -7,6 +7,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Modal,
+  Pressable,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Input from '../components/Input';
@@ -24,29 +26,31 @@ export default function GerenciarUsuariosScreen() {
   const [perfil, setPerfil] = useState('caixa');
   const [restaurante, setRestaurante] = useState('');
   const [carregando, setCarregando] = useState(true);
+  const [modalDesativarVisivel, setModalDesativarVisivel] = useState(false);
+  const [usuarioSelecionado, setUsuarioSelecionado] = useState(null);
 
   useEffect(() => {
+    async function carregarUsuarios() {
+      try {
+        const dados = await AsyncStorage.getItem(CHAVE);
+
+        const lista = dados
+          ? JSON.parse(dados)
+          : usuariosIniciais.map((item) => ({
+              ...item,
+              ativo: true,
+            }));
+
+        setUsuarios(lista);
+      } catch (_erro) {
+        Alert.alert('Erro', 'Não foi possível carregar os usuários.');
+      } finally {
+        setCarregando(false);
+      }
+    }
+
     carregarUsuarios();
   }, []);
-
-  async function carregarUsuarios() {
-    try {
-      const dados = await AsyncStorage.getItem(CHAVE);
-
-      const lista = dados
-        ? JSON.parse(dados)
-        : usuariosIniciais.map((item) => ({
-            ...item,
-            ativo: true,
-          }));
-
-      setUsuarios(lista);
-    } catch (erro) {
-      Alert.alert('Erro', 'Não foi possível carregar os usuários.');
-    } finally {
-      setCarregando(false);
-    }
-  }
 
   async function salvarUsuarios(novaLista) {
     await AsyncStorage.setItem(CHAVE, JSON.stringify(novaLista));
@@ -63,24 +67,24 @@ export default function GerenciarUsuariosScreen() {
       (item) =>
         item.usuario.toLowerCase() === usuario.trim().toLowerCase()
     );
- 
+
     if (existe) {
       Alert.alert('Atenção', 'Este usuário já está cadastrado.');
       return;
     }
     if (perfil !== 'empresa' && !restaurante) {
-  Alert.alert('Atenção', 'Selecione um restaurante.');
-  return;
-}
+      Alert.alert('Atenção', 'Selecione um restaurante.');
+      return;
+    }
 
     const novoUsuario = {
-  nome: nome.trim(),
-  usuario: usuario.trim().toLowerCase(),
-  senha,
-  perfil,
-  restaurante: perfil === 'empresa' ? undefined : restaurante,
-  ativo: true,
-};
+      nome: nome.trim(),
+      usuario: usuario.trim().toLowerCase(),
+      senha,
+      perfil,
+      restaurante: perfil === 'empresa' ? undefined : restaurante,
+      ativo: true,
+    };
 
     try {
       await salvarUsuarios([...usuarios, novoUsuario]);
@@ -97,31 +101,28 @@ export default function GerenciarUsuariosScreen() {
     }
   }
 
-  async function desativarUsuario(item) {
-    Alert.alert(
-      'Desativar usuário',
-      `Deseja desativar ${item.nome}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Desativar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const novaLista = usuarios.map((usuarioAtual) =>
-                usuarioAtual.usuario === item.usuario
-                  ? { ...usuarioAtual, ativo: false }
-                  : usuarioAtual
-              );
+  function abrirModalDesativar(item) {
+    // Função que impede a desativação do admin
+    if (item.perfil === 'admin') return;
+    setUsuarioSelecionado(item);
+    setModalDesativarVisivel(true);
+  }
 
-              await salvarUsuarios(novaLista);
-            } catch {
-              Alert.alert('Erro', 'Não foi possível desativar o usuário.');
-            }
-          },
-        },
-      ]
-    );
+  async function confirmarDesativacao() {
+    if (!usuarioSelecionado) return;
+    try {
+      const novaLista = usuarios.map((usuarioAtual) =>
+        usuarioAtual.usuario === usuarioSelecionado.usuario
+          ? { ...usuarioAtual, ativo: false }
+          : usuarioAtual
+      );
+      await salvarUsuarios(novaLista);
+    } catch {
+      Alert.alert('Erro', 'Não foi possível desativar o usuário.');
+    } finally {
+      setModalDesativarVisivel(false);
+      setUsuarioSelecionado(null);
+    }
   }
 
   return (
@@ -176,31 +177,33 @@ export default function GerenciarUsuariosScreen() {
           </TouchableOpacity>
         ))}
       </View>
-    {perfil !== 'empresa' && (
-  <>
-    <Text style={styles.label}>Restaurante</Text>
 
-    {restaurantes.map((item) => (
-      <TouchableOpacity
-        key={item.id}
-        style={[
-          styles.botaoPerfil,
-          restaurante === item.id && styles.perfilSelecionado,
-        ]}
-        onPress={() => setRestaurante(item.id)}
-      >
-        <Text
-          style={[
-            styles.textoPerfil,
-            restaurante === item.id && styles.textoSelecionado,
-          ]}
-        >
-          {item.nome}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </>
-)}
+      {perfil !== 'empresa' && (
+        <>
+          <Text style={styles.label}>Restaurante</Text>
+
+          {restaurantes.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[
+                styles.botaoPerfil,
+                restaurante === item.id && styles.perfilSelecionado,
+              ]}
+              onPress={() => setRestaurante(item.id)}
+            >
+              <Text
+                style={[
+                  styles.textoPerfil,
+                  restaurante === item.id && styles.textoSelecionado,
+                ]}
+              >
+                {item.nome}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </>
+      )}
+
       <Botao titulo="Cadastrar usuário" onPress={cadastrarUsuario} />
 
       <Text style={styles.subtitulo}>Usuários cadastrados</Text>
@@ -208,33 +211,71 @@ export default function GerenciarUsuariosScreen() {
       {carregando ? (
         <Text>Carregando usuários...</Text>
       ) : (
-        usuarios.map((item) => (
-          <View key={item.usuario} style={styles.card}>
-            <View style={styles.dados}>
-              <Text style={styles.nome}>{item.nome}</Text>
-              <Text style={styles.info}>
-                {item.usuario} • {item.perfil}
-              </Text>
-              <Text
-                style={{
-                  color: item.ativo === false ? cores.perigo : '#1F7A45',
-                }}
-              >
-                {item.ativo === false ? 'Desativado' : 'Ativo'}
-              </Text>
-            </View>
+        // Filtro para evitar que o usuário admin seja listado
+        usuarios
+          .filter((item) => item.perfil !== 'admin' && item.ativo !== false)
+          .map((item) => (
+            <View key={item.usuario} style={styles.card}>
+              <View style={styles.dados}>
+                <Text style={styles.nome}>{item.nome}</Text>
+                <Text style={styles.info}>
+                  {item.usuario} • {item.perfil}
+                </Text>
+                <Text
+                  style={{
+                    color: item.ativo === false ? cores.perigo : '#1F7A45',
+                  }}
+                >
+                  {item.ativo === false ? 'Desativado' : 'Ativo'}
+                </Text>
+              </View>
 
-            {item.ativo !== false && (
-              <TouchableOpacity
-                style={styles.botaoDesativar}
-                onPress={() => desativarUsuario(item)}
-              >
-                <Text style={styles.textoDesativar}>Desativar</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        ))
+              {item.ativo !== false && (
+                <TouchableOpacity
+                  style={styles.botaoDesativar}
+                  onPress={() => abrirModalDesativar(item)}
+                >
+                  <Text style={styles.textoDesativar}>Desativar</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ))
       )}
+
+      {/* Modal de confirmação de desativação */}
+      <Modal
+        visible={modalDesativarVisivel}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalDesativarVisivel(false)}
+      >
+        <View style={styles.modalFundo}>
+          <View style={styles.modalCartao}>
+            <Text style={styles.modalTitulo}>Desativar usuário</Text>
+            <Text style={styles.modalMensagem}>
+              Deseja desativar{' '}
+              <Text style={{ fontWeight: 'bold' }}>
+                {usuarioSelecionado?.nome}
+              </Text>
+              ?
+            </Text>
+            <View style={styles.modalLinhaBotoes}>
+              <Pressable
+                style={styles.modalBotaoCancelar}
+                onPress={() => setModalDesativarVisivel(false)}
+              >
+                <Text style={styles.modalTextoCancelar}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                style={styles.modalBotaoConfirmar}
+                onPress={confirmarDesativacao}
+              >
+                <Text style={styles.modalTextoConfirmar}>Desativar</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -314,6 +355,59 @@ const styles = StyleSheet.create({
   },
   textoDesativar: {
     color: cores.perigo,
+    fontWeight: 'bold',
+  },
+  // Estilos do modal de confirmação
+  modalFundo: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: espacos.g,
+  },
+  modalCartao: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: espacos.g,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitulo: {
+    fontSize: fontes.m,
+    fontWeight: 'bold',
+    color: cores.texto,
+    marginBottom: espacos.p,
+  },
+  modalMensagem: {
+    fontSize: fontes.p,
+    color: cores.texto,
+    marginBottom: espacos.g,
+  },
+  modalLinhaBotoes: {
+    flexDirection: 'row',
+    gap: espacos.m,
+  },
+  modalBotaoCancelar: {
+    flex: 1,
+    padding: espacos.m,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: cores.borda,
+    alignItems: 'center',
+  },
+  modalTextoCancelar: {
+    color: cores.texto,
+    fontWeight: 'bold',
+  },
+  modalBotaoConfirmar: {
+    flex: 1,
+    padding: espacos.m,
+    borderRadius: 8,
+    backgroundColor: cores.perigo,
+    alignItems: 'center',
+  },
+  modalTextoConfirmar: {
+    color: '#FFFFFF',
     fontWeight: 'bold',
   },
 });
