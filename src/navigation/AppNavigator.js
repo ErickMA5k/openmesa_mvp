@@ -14,6 +14,7 @@ import RequisitarConvenioScreen from '../screens/RequisitarConvenioScreen';
 import HistoricoConveniosScreen from '../screens/HistoricoConveniosScreens';
 import AprovacaoConveniosScreen from '../screens/AprovacaoConveniosScreen';
 import MarmitasConvenioScreen from '../screens/MarmitasConvenioScreen';
+import RelatorioScreen from '../screens/RelatorioScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -61,7 +62,7 @@ export default function AppNavigator() {
             <>
               <Stack.Screen
                 name="Relatorios"
-                component={EmBreveScreen}
+                component={RelatorioScreen}
                 options={{ title: 'Relatórios' }}
               />
               <Stack.Screen

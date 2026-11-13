@@ -6,6 +6,7 @@ export const permissoes = {
     cadastroDetalhado: false, // formulário detalhado
     excluirFicha: false, // Refente a capacidade de excluir do histórico
     aprovarConvenio: false, // aprovar ou recusar pedidos de convênio
+     emitirRelatorio: false, // Acesso a relatórios de fichas e convênios em Excel
   },
   fiscal: {
     adicionarFicha: false, // o Fiscal não registra fichas comuns (nem manual, nem por QR Code)
@@ -13,6 +14,7 @@ export const permissoes = {
     cadastroDetalhado: false,
     excluirFicha: false,
     aprovarConvenio: false,
+    emitirRelatorio: false,
   },
   empresa: {
     adicionarFicha: false,
@@ -20,6 +22,7 @@ export const permissoes = {
     cadastroDetalhado: false,
     excluirFicha: false,
     aprovarConvenio: false,
+    emitirRelatorio: false,
   },
   admin: {
     // Acesso apenas ás funções administrativas, o admin não é associado á nenhum restaurante, portanto, não pode adicionar fichas
@@ -27,6 +30,7 @@ export const permissoes = {
     incluirConvenio: false,
     excluirFicha: true,
     aprovarConvenio: true,
+    emitirRelatorio: true, //Somente o admin pode emitir relatórios, pois ele tem acesso a todos os restaurantes e empresas
   },
 };
  
