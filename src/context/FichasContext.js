@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthContext';
+import { podeFazer } from '../data/permissoes';
 
 // Contexto para gerenciar fichas
 const FichasContext = createContext(null);
@@ -154,9 +155,9 @@ export function FichasProvider({ children }) {
   }
 
   // Fichas que o usuário logado pode ver: só as do restaurante dele.
-  // O administrador (a ser criado) verá as de todos os restaurantes
+  // O administrador (perfil 'admin') vê as de todos os restaurantes
   const fichasVisiveis =
-    usuario?.perfil === 'administrador'
+    usuario?.perfil === 'admin'
       ? fichas
       : fichas.filter((f) => usuario?.restaurante && f.restaurante === usuario.restaurante);
 
@@ -176,6 +177,10 @@ export function FichasProvider({ children }) {
     const quantidade = Number(dados?.quantidade);
     const valor = Number(dados?.valor ?? valorFicha);
 
+        // Só usados nas fichas de convênio: a empresa que recebe (destino) e o pedido de origem
+    const destino = String(dados?.destino ?? '').trim();
+    const pedidoId = dados?.pedidoId ? String(dados.pedidoId) : '';
+
     if (!tipo) {
       throw new Error('Informe o tipo da ficha.');
     }
@@ -188,8 +193,24 @@ export function FichasProvider({ children }) {
       throw new Error('Informe um valor válido.');
     }
 
-    if (!usuario?.restaurante) {
-      throw new Error('Seu usuário não está vinculado a um restaurante.');
+    // Quem pode registrar: o Caixa registra fichas comuns; o Fiscal ou o Admin registram fichas de convênio
+    const podeRegistrar =
+      tipo === TIPOS.CONVENIO
+        ? podeFazer(usuario, 'aprovarConvenio') || podeFazer(usuario, 'incluirConvenio')
+        : podeFazer(usuario, 'adicionarFicha');
+
+    if (!podeRegistrar) {
+      throw new Error('Seu perfil não tem permissão para registrar este tipo de ficha.');
+    }
+
+    const restaurante = dados?.restaurante ?? usuario?.restaurante;
+    if (!restaurante) {
+      throw new Error('Restaurante não informado.');
+    }
+
+    // Marmita de convênio exige destino e o pedido de origem: sem eles o registro é recusado
+    if (tipo === TIPOS.CONVENIO && (!destino || !pedidoId)) {
+      throw new Error('A marmita de convênio exige um destino e o pedido de origem.');
     }
 
     // O ID mistura o horário e um contador, então continua único mesmo depois de
@@ -202,17 +223,36 @@ export function FichasProvider({ children }) {
       quantidade,
       valor,
       total: arredondar(quantidade * valor),
-      data: dataHoje(),
+      data: dados?.data ? formatarData(dados.data) : dataHoje(),
       hora: horaAgora(), // hora em que a venda foi registrada
-      restaurante: usuario.restaurante, // a ficha conta para o restaurante de quem a registrou
+      restaurante, // a ficha conta para o restaurante informado ou de quem a registrou
+      // Só as fichas de convênio guardam destino e pedido de origem
+      ...(tipo === TIPOS.CONVENIO ? { destino, pedidoId } : {}),
     };
 
-    await alterarLista((lista) => [...lista, novaFicha]);
+    await alterarLista((lista) => {
+      // Impede incluir o mesmo pedido duas vezes
+      if (pedidoId && lista.some((f) => f.pedidoId === pedidoId)) {
+        return lista;
+      }
+      return [...lista, novaFicha];
+    });
     return novaFicha;
   }
 
+  // Remove fichas atreladas a um pedido específico de convênio (ex.: quando cancelado/recusado pelo admin)
+  async function removerFichaPorPedidoId(pedidoId) {
+    if (!pedidoId) return;
+    await alterarLista((lista) => lista.filter((ficha) => ficha.pedidoId !== String(pedidoId)));
+  }
+
   // Remove uma única ficha, pelo id (usada na tela de Histórico)
+  // Só perfis com a permissão "excluirFicha" (ver data/permissoes.js) podem excluir
   async function removerFicha(id) {
+    if (!podeFazer(usuario, 'excluirFicha')) {
+      throw new Error('Seu perfil não tem permissão para excluir fichas.');
+    }
+
     await alterarLista((lista) => lista.filter((ficha) => ficha.id !== String(id)));
   }
 
@@ -248,6 +288,7 @@ export function FichasProvider({ children }) {
     erroCarregamento,
     adicionarFicha,
     removerFicha,
+    removerFichaPorPedidoId,
     fichasDoDia,
     totalFichas,
     receitaTotal,

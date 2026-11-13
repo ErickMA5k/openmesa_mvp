@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { cores } from '../theme';
+
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import AdicionarFichaScreen from '../screens/AdicionarFichaScreen';
@@ -11,6 +12,8 @@ import QRCodeScreen from '../screens/QRCodeScreen';
 import EmBreveScreen from '../screens/EmBreveScreen';
 import RequisitarConvenioScreen from '../screens/RequisitarConvenioScreen';
 import HistoricoConveniosScreen from '../screens/HistoricoConveniosScreens';
+import AprovacaoConveniosScreen from '../screens/AprovacaoConveniosScreen';
+import MarmitasConvenioScreen from '../screens/MarmitasConvenioScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,32 +21,76 @@ export default function AppNavigator() {
   const { usuario } = useAuth();
 
   return (
-    <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: cores.fundo } }}>
+    <Stack.Navigator
+      screenOptions={{ contentStyle: { backgroundColor: cores.fundo } }}
+    >
       {usuario ? (
-  <>
-    <Stack.Screen name="Home" component={HomeScreen} />
-    <Stack.Screen name="AdicionarFicha" component={AdicionarFichaScreen} options={{ title: 'Adicionar Ficha' }} />
-    <Stack.Screen name="Historico" component={HistoricoScreen} />
-    <Stack.Screen name="Calendario" component={CalendarioScreen} options={{ title: 'Calendário' }} />
-    <Stack.Screen name="QRCode" component={QRCodeScreen} options={{ headerShown: false }} />
-    <Stack.Screen name="MarmitasConvenio" component={EmBreveScreen} options={{ title: 'Marmitas de convênio' }} />
-    <Stack.Screen name="Relatorios" component={EmBreveScreen} options={{ title: 'Relatórios' }} />
-    <Stack.Screen name="PagamentosConvenios" component={EmBreveScreen} options={{ title: 'Pagamentos de convênios' }} />
-    <Stack.Screen name="FazerPedido" component={RequisitarConvenioScreen} options={{ title: 'Fazer pedido' }} />
-    <Stack.Screen name="HistoricoPedidos" component={HistoricoConveniosScreen} options={{ title: 'Histórico de pedidos' }} />
+        <>
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Historico" component={HistoricoScreen} />
+          <Stack.Screen
+            name="Calendario"
+            component={CalendarioScreen}
+            options={{ title: 'Calendário' }}
+          />
 
-    {usuario?.perfil === 'administrador' && (
-      <Stack.Screen
-        name="GerenciarUsuarios"
-        component={GerenciarUsuariosScreen}
-        options={{ title: 'Gerenciar Usuários' }}
-      />
-    )}
-  </>
-) : (
-  <Stack.Screen name="Login" component={LoginScreen} />
-)}
+          {usuario.perfil === 'caixa' && (
+            <>
+              <Stack.Screen
+                name="AdicionarFicha"
+                component={AdicionarFichaScreen}
+                options={{ title: 'Adicionar Ficha' }}
+              />
+              <Stack.Screen
+                name="QRCode"
+                component={QRCodeScreen}
+                options={{ headerShown: false }}
+              />
+            </>
+          )}
+
+          {usuario.perfil === 'fiscal' && (
+            <Stack.Screen
+              name="MarmitasConvenio"
+              component={MarmitasConvenioScreen}
+              options={{ title: 'Marmitas de convênio' }}
+            />
+          )}
+
+          {usuario.perfil === 'admin' && (
+            <>
+              <Stack.Screen
+                name="Relatorios"
+                component={EmBreveScreen}
+                options={{ title: 'Relatórios' }}
+              />
+              <Stack.Screen
+                name="AprovacaoConvenios"
+                component={AprovacaoConveniosScreen}
+                options={{ title: 'Aprovação de convênios' }}
+              />
+              <Stack.Screen
+                name="GerenciarUsuarios"
+                component={GerenciarUsuariosScreen}
+                options={{ title: 'Gerenciar Usuários' }}
+              />
+            </>
+          )}
+
+          <Stack.Screen
+            name="FazerPedido"
+            component={RequisitarConvenioScreen}
+            options={{ title: 'Fazer pedido' }}
+          />
+          <Stack.Screen
+            name="HistoricoPedidos"
+            component={HistoricoConveniosScreen}
+            options={{ title: 'Histórico de pedidos' }}
+          />
+        </>
+      ) : (
+        <Stack.Screen name="Login" component={LoginScreen} />
+      )}
     </Stack.Navigator>
   );
 }
- 

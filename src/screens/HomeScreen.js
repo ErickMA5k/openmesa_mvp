@@ -1,8 +1,11 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Modal, Pressable } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { useFichas } from '../context/FichasContext';
-import { espacos } from '../theme';
 import { nomeDoRestaurante } from '../data/restaurantes';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { podeFazer } from '../data/permissoes';
+import { STATUS, statusDoPedido, lerConvenios } from '../data/convenios';
+import { cores, espacos, fontes } from '../theme';
 
 //Botões que o Caixa vê (o Fiscal também usa todos eles)
 const botoesCaixa = [
@@ -12,20 +15,43 @@ const botoesCaixa = [
   { titulo: 'Escanear QR Code', descricao: 'Ler o QR Code das fichas', tela: 'QRCode', simbolo: '▣' },
 ];
 
+//Telas de registro de fichas: só o Caixa usa (o Fiscal usa só os de consulta)
+const telasSoDoCaixa = ['AdicionarFicha', 'QRCode'];
+
+//Botões do Fiscal: os de consulta do Caixa + os convênios já aprovados pelo admin para o restaurante dele
+const botoesFiscal = [
+  // copia os botões do Caixa, menos os de registrar ficha
+  ...botoesCaixa.filter((b) => !telasSoDoCaixa.includes(b.tela)),
+  { titulo: 'Marmitas de convênio', descricao: 'Pedidos de convênio aprovados', tela: 'MarmitasConvenio', simbolo: '≡' },
+];
+
+//Telas que o admin NÃO usa:
+//- AdicionarFicha e QRCode: a ficha é registrada para o restaurante de quem a lança, e o admin não tem restaurante
+//- MarmitasConvenio: o admin já vê e decide os convênios na tela de Aprovação
+const telasForaDoAdmin = ['AdicionarFicha', 'QRCode', 'MarmitasConvenio'];
+
 //Lista de botões de cada perfil. A chave é o mesmo "perfil" do usuarios.js
 const botoesPorPerfil = {
   caixa: botoesCaixa,
-  fiscal: [
-    ...botoesCaixa, // copia todos os botões do Caixa para dentro da lista do Fiscal
-    { titulo: 'Marmitas de convênio', descricao: 'Pedidos feitos pelas empresas', tela: 'MarmitasConvenio', simbolo: '≡' },
-    { titulo: 'Relatórios', descricao: 'Planilhas de vendas', tela: 'Relatorios', simbolo: '↓' },
-    { titulo: 'Pagamentos de convênios', descricao: 'Pedidos finalizados e pagamentos', tela: 'PagamentosConvenios', simbolo: '$' },
-  ],
+  fiscal: botoesFiscal,
   empresa: [
     { titulo: 'Fazer pedido', descricao: 'Solicitar marmitas ao restaurante', tela: 'FazerPedido', simbolo: '+', principal: true },
     { titulo: 'Histórico de pedidos', descricao: 'Consultar pedidos feitos', tela: 'HistoricoPedidos', simbolo: '≡' },
   ],
-  administrador: [
+admin: [
+  ...botoesFiscal.filter((b) => !telasForaDoAdmin.includes(b.tela)),
+  {
+    titulo: 'Relatórios',
+    descricao: 'Planilhas de vendas',
+    tela: 'Relatorios',
+    simbolo: '↗',
+  },
+  {
+    titulo: 'Aprovação de convênios',
+    descricao: 'Aprovar ou recusar pedidos das empresas',
+    tela: 'AprovacaoConvenios',
+    simbolo: '✓',
+  },
   {
     titulo: 'Gerenciar Usuários',
     descricao: 'Cadastrar e desativar usuários',
@@ -36,20 +62,37 @@ const botoesPorPerfil = {
 };
 
 export default function HomeScreen({ navigation }) {
-  const { usuario, sair } = useAuth();
+  const { sair, usuario } = useAuth();
+  const [modalSairVisivel, setModalSairVisivel] = useState(false);
 
-  const {
-    fichas,
-    totalGeral,
-    receitaTotal,
-  } = useFichas();
+  // Números das notificações (null = ainda não carregou)
+  const [pendentes, setPendentes] = useState(null);
 
-    const confirmarSaida = () =>
-    Alert.alert('Sair', 'Deseja realmente sair da conta?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Sair', style: 'destructive', onPress: sair },
-    ]);
+  const notificacoes = {
+    AprovacaoConvenios: pendentes,
+  };
 
+  // Recarrega as contagens sempre que a Home volta a ficar visível
+  useFocusEffect(
+    useCallback(() => {
+      const ehAdmin = podeFazer(usuario, 'aprovarConvenio');
+      if (!ehAdmin) return; // os outros perfis não têm notificações
+
+      let ativo = true; // evita atualizar a tela se ela já foi fechada
+
+      lerConvenios()
+        .then((lista) => {
+          if (!ativo) return;
+          setPendentes(lista.filter((p) => statusDoPedido(p) === STATUS.PENDENTE).length);
+        })
+        .catch(() => {}); // se a leitura falhar, o número não aparece (melhor do que mostrar 0 errado)
+
+      return () => {
+        ativo = false;
+      };
+    }, [usuario])
+  );
+ 
   return (
     <ScrollView contentContainerStyle={styles.container}>
 
@@ -108,6 +151,15 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.cardTitulo}>{b.titulo}</Text>
               <Text style={styles.cardDescricao}>{b.descricao}</Text>
             </View>
+
+            {/* Notificação em vermelho
+            UPDATE: só aparece se o número de notificações for maior que 0 */}
+            {notificacoes[b.tela] > 0 && (
+              <View style={styles.selo}>
+                <Text style={styles.textoSelo}>{notificacoes[b.tela]}</Text>
+              </View>
+            )}
+
           </TouchableOpacity>
         ))}
       </View>
@@ -116,11 +168,53 @@ export default function HomeScreen({ navigation }) {
       <TouchableOpacity
         style={styles.botaoSair}
         activeOpacity={0.7}
-        onPress={confirmarSaida}>
+        onPress={() => setModalSairVisivel(true)}
+      >
         <Text style={styles.textoSair}>
           Sair da conta
         </Text>
       </TouchableOpacity>
+
+      {/* Pop-up de confirmação para sair */}
+      <Modal
+        visible={modalSairVisivel}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalSairVisivel(false)}
+      >
+        <Pressable
+          style={styles.modalFundo}
+          onPress={() => setModalSairVisivel(false)}
+        >
+          <Pressable style={styles.modalCartao} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitulo}>Deseja Sair</Text>
+            <Text style={styles.modalMensagem}>
+              Tem certeza de que deseja sair da sua conta?
+            </Text>
+
+            <View style={styles.modalLinhaBotoes}>
+              <TouchableOpacity
+                style={styles.modalBotaoCancelar}
+                activeOpacity={0.7}
+                onPress={() => setModalSairVisivel(false)}
+              >
+                <Text style={styles.modalTextoCancelar}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalBotaoConfirmar}
+                activeOpacity={0.7}
+                onPress={() => {
+                  setModalSairVisivel(false);
+                  sair();
+                }}
+              >
+                <Text style={styles.modalTextoConfirmar}>Sim</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
     </ScrollView>
   );
@@ -272,4 +366,93 @@ const styles = StyleSheet.create({
     color: '#B84A4A',
   },
 
+    /* Notificação (círculo vermelho com o número) */
+
+  selo: {
+    marginLeft: 'auto', // empurra o círculo para o canto direito do card
+    minWidth: 28,
+    height: 28,
+    borderRadius: 14,
+    paddingHorizontal: 8,
+    backgroundColor: cores.perigo,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  textoSelo: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  /* Pop-up Modal de Confirmação */
+  modalFundo: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: espacos.m,
+  },
+
+  modalCartao: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: cores.secundaria,
+    borderRadius: 14,
+    padding: espacos.g,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+
+  modalTitulo: {
+    fontSize: fontes.g,
+    fontWeight: 'bold',
+    color: cores.escura,
+    marginBottom: espacos.p,
+  },
+
+  modalMensagem: {
+    fontSize: fontes.p,
+    color: '#666666',
+    marginBottom: espacos.m,
+    lineHeight: 20,
+  },
+
+  modalLinhaBotoes: {
+    flexDirection: 'row',
+    gap: espacos.p,
+  },
+
+  modalBotaoCancelar: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: cores.borda,
+    backgroundColor: cores.secundaria,
+    alignItems: 'center',
+  },
+
+  modalTextoCancelar: {
+    fontSize: fontes.m,
+    fontWeight: '600',
+    color: '#555555',
+  },
+
+  modalBotaoConfirmar: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: cores.perigo,
+    alignItems: 'center',
+  },
+
+  modalTextoConfirmar: {
+    fontSize: fontes.m,
+    fontWeight: 'bold',
+    color: cores.secundaria,
+  },
 });
