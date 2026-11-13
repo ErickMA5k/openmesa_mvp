@@ -5,6 +5,7 @@ import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import AdicionarFichaScreen from '../screens/AdicionarFichaScreen';
 import HistoricoScreen from '../screens/HistoricoScreen';
+import GerenciarUsuariosScreen from '../screens/GerenciarUsuariosScreen';
 import CalendarioScreen from '../screens/CalendarioScreen';
 import QRCodeScreen from '../screens/QRCodeScreen';
 import EmBreveScreen from '../screens/EmBreveScreen';
@@ -19,21 +20,30 @@ export default function AppNavigator() {
   return (
     <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: cores.fundo } }}>
       {usuario ? (
-        <>
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="AdicionarFicha" component={AdicionarFichaScreen} options={{ title: 'Adicionar Ficha' }} />
-          <Stack.Screen name="Historico" component={HistoricoScreen} />
-          <Stack.Screen name="Calendario" component={CalendarioScreen} options={{ title: 'Calendário' }} />
-          <Stack.Screen name="QRCode" component={QRCodeScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="MarmitasConvenio" component={EmBreveScreen} options={{ title: 'Marmitas de convênio' }} />
-          <Stack.Screen name="Relatorios" component={EmBreveScreen} options={{ title: 'Relatórios' }} />
-          <Stack.Screen name="PagamentosConvenios" component={EmBreveScreen} options={{ title: 'Pagamentos de convênios' }} />
-          <Stack.Screen name="FazerPedido" component={RequisitarConvenioScreen} options={{ title: 'Fazer pedido' }} />
-          <Stack.Screen name="HistoricoPedidos" component={HistoricoConveniosScreen} options={{ title: 'Histórico de pedidos' }} />
-        </>
-      ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
-      )}
+  <>
+    <Stack.Screen name="Home" component={HomeScreen} />
+    <Stack.Screen name="AdicionarFicha" component={AdicionarFichaScreen} options={{ title: 'Adicionar Ficha' }} />
+    <Stack.Screen name="Historico" component={HistoricoScreen} />
+    <Stack.Screen name="Calendario" component={CalendarioScreen} options={{ title: 'Calendário' }} />
+    <Stack.Screen name="QRCode" component={QRCodeScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="MarmitasConvenio" component={EmBreveScreen} options={{ title: 'Marmitas de convênio' }} />
+    <Stack.Screen name="Relatorios" component={EmBreveScreen} options={{ title: 'Relatórios' }} />
+    <Stack.Screen name="PagamentosConvenios" component={EmBreveScreen} options={{ title: 'Pagamentos de convênios' }} />
+    <Stack.Screen name="FazerPedido" component={RequisitarConvenioScreen} options={{ title: 'Fazer pedido' }} />
+    <Stack.Screen name="HistoricoPedidos" component={HistoricoConveniosScreen} options={{ title: 'Histórico de pedidos' }} />
+
+    {usuario?.perfil === 'administrador' && (
+      <Stack.Screen
+        name="GerenciarUsuarios"
+        component={GerenciarUsuariosScreen}
+        options={{ title: 'Gerenciar Usuários' }}
+      />
+    )}
+  </>
+) : (
+  <Stack.Screen name="Login" component={LoginScreen} />
+)}
     </Stack.Navigator>
   );
 }
+ 

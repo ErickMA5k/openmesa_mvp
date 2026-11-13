@@ -10,7 +10,10 @@ import {
 import Input from '../components/Input';
 import Botao from '../components/Botao';
 import { useAuth } from '../context/AuthContext';
-import { usuarios } from '../data/usuarios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { usuarios as usuariosIniciais } from '../data/usuarios';
+
+const CHAVE = '@openmesa:usuarios';
 
 export default function LoginScreen() {
   const { entrar } = useAuth();
@@ -21,33 +24,36 @@ export default function LoginScreen() {
   const [erroUsuario, setErroUsuario] = useState('');
   const [erroSenha, setErroSenha] = useState('');
 
-  const aoEntrar = () => {
-    let temErro = false;
+  const aoEntrar = async () => {
+  let temErro = false;
 
-    // Limpa os erros anteriores
-    setErroUsuario('');
-    setErroSenha('');
+  setErroUsuario('');
+  setErroSenha('');
 
-    // Verifica usuário
-    if (!usuario.trim()) {
-      setErroUsuario('Preencha o usuário');
-      temErro = true;
-    }
+  if (!usuario.trim()) {
+    setErroUsuario('Preencha o usuário');
+    temErro = true;
+  }
 
-    // Verifica senha
-    if (!senha.trim()) {
-      setErroSenha('Preencha a senha');
-      temErro = true;
-    }
+  if (!senha.trim()) {
+    setErroSenha('Preencha a senha');
+    temErro = true;
+  }
 
-    // Se tiver algum erro, não continua
-    if (temErro) {
-      return;
-    }
+  if (temErro) return;
 
-    // Confere se o usuário e a senha existem na lista
-    const encontrado = usuarios.find(
-      (u) => u.usuario === usuario.trim().toLowerCase() && u.senha === senha
+  try {
+    const dados = await AsyncStorage.getItem(CHAVE);
+
+    const listaUsuarios = dados
+      ? JSON.parse(dados)
+      : usuariosIniciais;
+
+    const encontrado = listaUsuarios.find(
+      (u) =>
+        u.usuario === usuario.trim().toLowerCase() &&
+        u.senha === senha &&
+        u.ativo !== false
     );
 
     if (!encontrado) {
@@ -55,13 +61,16 @@ export default function LoginScreen() {
       return;
     }
 
-    // Login com os dados cadastrados
     entrar({
       nome: encontrado.nome,
       perfil: encontrado.perfil,
       restaurante: encontrado.restaurante,
     });
-  };
+  } catch (erro) {
+    console.log('Erro ao consultar usuários:', erro);
+    setErroSenha('Não foi possível realizar o login.');
+  }
+};
 
   return (
     <KeyboardAvoidingView

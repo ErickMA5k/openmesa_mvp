@@ -25,6 +25,14 @@ const botoesPorPerfil = {
     { titulo: 'Fazer pedido', descricao: 'Solicitar marmitas ao restaurante', tela: 'FazerPedido', simbolo: '+', principal: true },
     { titulo: 'Histórico de pedidos', descricao: 'Consultar pedidos feitos', tela: 'HistoricoPedidos', simbolo: '≡' },
   ],
+  administrador: [
+  {
+    titulo: 'Gerenciar Usuários',
+    descricao: 'Cadastrar e desativar usuários',
+    tela: 'GerenciarUsuarios',
+    simbolo: '⚙',
+  },
+],
 };
 
 export default function HomeScreen({ navigation }) {
