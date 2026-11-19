@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Linking } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Linking, Platform } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFichas, TIPOS } from '../context/FichasContext';
 import Botao from '../components/Botao';
@@ -147,50 +147,62 @@ export default function QRCodeScreen({ navigation }) {
     </Pressable>
   );
 
-  // Enquanto a permissão carrega, mostra só o fundo preto (com a seta de voltar)
-  if (!permissao) return <View style={styles.tela}>{botaoVoltar}</View>;
+  const ehWeb = Platform.OS === 'web';
 
-  // Sem permissão da câmera: explica, oferece permitir (ou abrir as configurações) e deixa voltar
-  if (!permissao.granted) {
-    return (
-      <View style={[styles.tela, styles.centro]}>
-        {botaoVoltar}
-        <Text style={styles.aviso}>Precisamos da câmera para ler os QR Codes.</Text>
-        {permissao.canAskAgain ? (
-          <Botao titulo="Permitir câmera" onPress={pedirPermissao} />
-        ) : (
-          <Botao titulo="Abrir configurações" onPress={() => Linking.openSettings()} />
-        )}
-        <Botao titulo="Voltar" variante="secundario" onPress={() => navigation.goBack()} />
-      </View>
-    );
-  }
+  // No celular nativo: valida permissão e disponibilidade da câmera
+  if (!ehWeb) {
+    if (!permissao) return <View style={styles.tela}>{botaoVoltar}</View>;
 
-  // Câmera indisponível (sem câmera no aparelho, em uso por outro app, etc.)
-  if (erroCamera) {
-    return (
-      <View style={[styles.tela, styles.centro]}>
-        {botaoVoltar}
-        <Text style={styles.aviso}>Não foi possível iniciar a câmera.</Text>
-        <Text style={styles.avisoDetalhe}>{erroCamera}</Text>
-        <Botao titulo="Tentar novamente" onPress={() => setErroCamera('')} />
-        <Botao titulo="Voltar" variante="secundario" onPress={() => navigation.goBack()} />
-      </View>
-    );
+    if (!permissao.granted) {
+      return (
+        <View style={[styles.tela, styles.centro]}>
+          {botaoVoltar}
+          <Text style={styles.aviso}>Precisamos da câmera para ler os QR Codes.</Text>
+          {permissao.canAskAgain ? (
+            <Botao titulo="Permitir câmera" onPress={pedirPermissao} />
+          ) : (
+            <Botao titulo="Abrir configurações" onPress={() => Linking.openSettings()} />
+          )}
+          <Botao titulo="Voltar" variante="secundario" onPress={() => navigation.goBack()} />
+        </View>
+      );
+    }
+
+    if (erroCamera) {
+      return (
+        <View style={[styles.tela, styles.centro]}>
+          {botaoVoltar}
+          <Text style={styles.aviso}>Não foi possível iniciar a câmera.</Text>
+          <Text style={styles.avisoDetalhe}>{erroCamera}</Text>
+          <Botao titulo="Tentar novamente" onPress={() => setErroCamera('')} />
+          <Botao titulo="Voltar" variante="secundario" onPress={() => navigation.goBack()} />
+        </View>
+      );
+    }
   }
 
   const cor = COR_CONTORNO[status];
+  const cameraAtiva = !ehWeb || (permissao?.granted && !erroCamera);
 
   return (
     <View style={styles.tela}>
       <View style={styles.areaCamera}>
-        <CameraView
-          style={StyleSheet.absoluteFill}
-          facing="back"
-          barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-          onBarcodeScanned={aoLer}
-          onMountError={(e) => setErroCamera(e?.message || 'Câmera indisponível neste aparelho.')}
-        />
+        {cameraAtiva ? (
+          <CameraView
+            style={StyleSheet.absoluteFill}
+            facing="back"
+            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+            onBarcodeScanned={aoLer}
+            onMountError={(e) => setErroCamera(e?.message || 'Câmera indisponível neste navegador/aparelho.')}
+          />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, styles.centro, { backgroundColor: '#111827' }]}>
+            <Text style={styles.aviso}>Câmera não disponível no navegador.</Text>
+            <Text style={styles.avisoDetalhe}>
+              Utilize os botões de teste abaixo para simular a leitura dos QR Codes.
+            </Text>
+          </View>
+        )}
 
         {/* Contorno do leitor: quatro cantos que mudam de cor */}
         <View style={styles.centralizar} pointerEvents="none">
@@ -201,6 +213,26 @@ export default function QRCodeScreen({ navigation }) {
             <View style={[styles.canto, styles.baixoDir, { borderColor: cor }]} />
           </View>
         </View>
+
+        {ehWeb && (
+          <View style={styles.painelWeb}>
+            <Text style={styles.painelWebTexto}>🧪 Testar leitura de QR Code:</Text>
+            <View style={styles.painelWebBotoes}>
+              <Pressable
+                style={[styles.botaoSimular, { backgroundColor: cores.verde }]}
+                onPress={() => aoLer({ data: 'marmita' })}
+              >
+                <Text style={styles.botaoSimularTexto}>+ QR Marmita</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.botaoSimular, { backgroundColor: cores.azul }]}
+                onPress={() => aoLer({ data: 'refeicao' })}
+              >
+                <Text style={styles.botaoSimularTexto}>+ QR Refeição</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
 
         {botaoVoltar}
       </View>
@@ -273,4 +305,27 @@ const styles = StyleSheet.create({
   popupIcone: { fontSize: 48, fontWeight: 'bold', marginBottom: espacos.p },
   popupTitulo: { fontSize: 20, fontWeight: 'bold', color: cores.escura, textAlign: 'center', marginBottom: espacos.p },
   popupMensagem: { fontSize: 16, color: cores.texto, textAlign: 'center', marginBottom: espacos.m },
+
+  painelWeb: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(23, 23, 23, 0.85)',
+    borderRadius: 12,
+    padding: espacos.m,
+    alignItems: 'center',
+    zIndex: 10,
+    borderWidth: 1,
+    borderColor: '#404040',
+  },
+  painelWebTexto: { color: '#E5E7EB', fontSize: 13, marginBottom: espacos.p, fontWeight: '600' },
+  painelWebBotoes: { flexDirection: 'row', gap: espacos.m },
+  botaoSimular: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  botaoSimularTexto: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 13 },
 });

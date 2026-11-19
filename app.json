@@ -15,14 +15,23 @@
         "foregroundImage": "./src/assets/android-icon-foreground.png",
         "backgroundImage": "./src/assets/android-icon-background.png",
         "monochromeImage": "./src/assets/android-icon-monochrome.png"
-      }
+      },
+      "package": "openmesa.beta"
     },
     "web": {
       "favicon": "./src/assets/favicon.png"
     },
+    "experiments": {
+      "baseUrl": "/openmesa_mvp"
+    },
     "plugins": [
       "expo-status-bar",
       "expo-sharing"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9ff278ac-e932-4f8d-8bca-dc1c3806d38e"
+      }
+    }
   }
 }
