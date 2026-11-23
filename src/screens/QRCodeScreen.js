@@ -42,11 +42,19 @@ export default function QRCodeScreen({ navigation }) {
   const [popup, setPopup] = useState(null);
   const [salvando, setSalvando] = useState(false); // true enquanto grava as fichas
   const [erroCamera, setErroCamera] = useState(''); // mensagem se a câmera não iniciar
+  const cameraAtiva = !erroCamera; // Ajustes para evitar tela vazia em caso de permissão não liberada
 
   // Refs guardam valores sem redesenhar a tela (a câmera chama aoLer várias vezes por segundo)
   const travado = useRef(false);      // true enquanto o mesmo QR Code continua na câmera
   const ultimaDeteccao = useRef(0);   // horário em que a câmera viu um QR Code pela última vez
 
+  //Salva guarda para sistemas web
+  useEffect(() => {
+  if (Platform.OS === 'web' && !permissao?.granted) {
+    pedirPermissao();
+  }
+}, [permissao]);  
+  
   // A cada 300ms confere se o QR Code saiu da câmera; se saiu, libera uma nova leitura
   useEffect(() => {
     const intervalo = setInterval(() => {
