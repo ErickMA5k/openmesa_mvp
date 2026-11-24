@@ -2,7 +2,6 @@
 export const permissoes = {
   caixa: {
     adicionarFicha: true, // registrar fichas de marmita e refeição (manual e QR Code)
-    incluirConvenio: false, // incluir marmitas de convênio na contagem
     cadastroDetalhado: false, // formulário detalhado
     excluirFicha: false, // Refente a capacidade de excluir do histórico
     aprovarConvenio: false, // aprovar ou recusar pedidos de convênio
@@ -10,15 +9,13 @@ export const permissoes = {
   },
   fiscal: {
     adicionarFicha: false, // o Fiscal não registra fichas comuns (nem manual, nem por QR Code)
-    incluirConvenio: true, // só registra fichas ao incluir marmitas de convênio aprovadas
     cadastroDetalhado: false,
-    excluirFicha: false,
+    excluirFicha: true,
     aprovarConvenio: false,
     emitirRelatorio: false,
   },
   empresa: {
     adicionarFicha: false,
-    incluirConvenio: false,
     cadastroDetalhado: false,
     excluirFicha: false,
     aprovarConvenio: false,
@@ -27,7 +24,6 @@ export const permissoes = {
   admin: {
     // Acesso apenas ás funções administrativas, o admin não é associado á nenhum restaurante, portanto, não pode adicionar fichas
     adicionarFicha: false,
-    incluirConvenio: false,
     excluirFicha: true,
     aprovarConvenio: true,
     emitirRelatorio: true, //Somente o admin pode emitir relatórios, pois ele tem acesso a todos os restaurantes e empresas
