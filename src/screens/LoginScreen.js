@@ -120,6 +120,8 @@ export default function LoginScreen() {
           <Input
             label="Senha"
             value={senha}
+            autoComplete="off"
+            textContentType="none"
             onChangeText={(texto) => {
               setSenha(texto);
               setErroSenha('');

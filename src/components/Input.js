@@ -4,8 +4,8 @@ import { cores, espacos, fontes } from '../theme';
 export default function Input({ label, erro, ...props }) {
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput style={[styles.input, erro ? styles.inputErro : null]} {...props} />
+      <Text style={[styles.label]}>{label}</Text>
+      <TextInput style={[styles.input, erro ? styles.inputErro : null,{minHeight:48}]} multiline={false} {...props} />
       {erro ? <Text style={styles.erro}>{erro}</Text> : null}
     </View>
   );
