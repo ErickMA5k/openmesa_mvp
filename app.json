@@ -15,7 +15,11 @@
         "foregroundImage": "./src/assets/android-icon-foreground.png",
         "backgroundImage": "./src/assets/android-icon-background.png",
         "monochromeImage": "./src/assets/android-icon-monochrome.png"
-      }
+      },
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
+      "package": "com.jhonnysk.openmesa0"
     },
     "web": {
       "favicon": "./src/assets/favicon.png"
@@ -23,9 +27,28 @@
     "plugins": [
       "expo-status-bar",
       "expo-sharing",
-      ["expo-camera", {
-        "cameraPermission": "O OpenMesa precisa de acesso à câmera para escanear QR Codes."
-      }]
-    ]
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O OpenMesa precisa de acesso à câmera para escanear QR Codes.",
+          "barcodeScannerEnabled": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": false,
+            "extraProguardRules": "-keep class com.google.mlkit.** { *; }\n-keep class expo.modules.camera.** { *; }"
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9ff278ac-e932-4f8d-8bca-dc1c3806d38e"
+      }
+    },
+    "owner": "OpenMesaTeam"
   }
 }

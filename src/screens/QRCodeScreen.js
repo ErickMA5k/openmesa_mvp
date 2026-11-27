@@ -22,9 +22,17 @@ const COR_POPUP = {
 // Tempo (em milissegundos) sem enxergar o QR Code para liberar uma nova leitura
 const TEMPO_LIBERAR = 800;
 
+// Configuração fixa do leitor de código de barras (declarada fora para manter a referência estável e evitar reinicializações do scanner)
+const CONFIGURACAO_SCANNER = { barcodeTypes: ['qr'] };
+
 // Converte o texto lido do QR Code em um tipo de ficha (null se não for reconhecido)
 function tipoDoQr(texto) {
-  const valor = texto.trim().toLowerCase();
+  if (!texto) return null;
+  const valor = texto
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
   if (valor === 'marmita') return TIPOS.MARMITA;
   if (valor === 'refeicao') return TIPOS.REFEICAO;
   return null;
@@ -187,7 +195,8 @@ export default function QRCodeScreen({ navigation }) {
         <CameraView
           style={StyleSheet.absoluteFill}
           facing="back"
-          barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+          autofocus="on"
+          barcodeScannerSettings={CONFIGURACAO_SCANNER}
           onBarcodeScanned={aoLer}
           onMountError={(e) => setErroCamera(e?.message || 'Câmera indisponível neste aparelho.')}
         />
